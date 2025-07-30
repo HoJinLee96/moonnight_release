@@ -1,0 +1,113 @@
+<style th:fragment="footerCss">
+	:root {
+		--footer-bg-color: #f8f9fa;
+		--text-color-muted: #868e96;
+		--text-color-light-muted: #bababa;
+	}
+
+	/* --- Footer --- */
+	.footer {
+		min-width: var(--layout-min-width);
+		max-width: var(--layout-max-width);
+		min-height: 250px;
+		/* 내부 콘텐츠에 따라 높이 조절 */
+		margin-top: 100px;
+		padding: 40px 20px;
+		/* 상하 패딩 */
+		background-color: var(--footer-bg-color);
+		border-top: 1px solid var(--border-color);
+		box-sizing: border-box;
+		margin: 0 auto;
+
+	}
+
+	.footer__content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		/* 상단 정렬 */
+	}
+
+	/* Footer Info & Nav */
+	.footer__info {
+		/* flex-grow: 1; 자동으로 남은 공간 차지 */
+	}
+
+	.footer__nav {
+		display: flex;
+		gap: 20px;
+		/* ★ li에 margin을 주는 것보다 gap이 더 깔끔함 */
+		list-style: none;
+		margin: 0 0 20px 0;
+		padding: 0;
+	}
+
+	.footer__nav a {
+		text-decoration: none;
+		color: var(--text-color-muted);
+		font-weight: bold;
+		transition: color 0.2s;
+	}
+
+	.footer__nav a:hover {
+		color: var(--main-text-color);
+	}
+
+	.footer__details {
+		font-size: 14px;
+		color: var(--text-color-light-muted);
+		line-height: 1.6;
+		/* 줄간격 조절 */
+	}
+
+	/* Footer SNS */
+	.footer__sns {
+		/* margin-left: auto; 가 없어도 justify-content로 정렬됨 */
+	}
+
+	.sns-list {
+		display: flex;
+		gap: 15px;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.sns-list img {
+		width: 32px;
+		/* 아이콘 크기 */
+		height: 32px;
+		opacity: 0.7;
+		transition: opacity 0.2s;
+	}
+
+	.sns-list a:hover img {
+		opacity: 1;
+	}
+</style>
+<footer class="footer" th:fragment="footerFragment">
+	<div class="content-wrapper footer__content">
+
+		<div class="footer__info">
+			<ul class="footer__nav">
+				<li><a href="#">회사소개</a></li>
+				<li><a href="#">이용약관</a></li>
+				<li><a href="#">개인정보처리방침</a></li>
+			</ul>
+			<div class="footer__details">
+				<span>(주)참맨 | 대표: 이호진 | 사업자등록번호: 123-45-67890</span><br>
+				<span>주소: 대한민국 서울 | E-mail: test@example.com</span><br>
+				<span>Copyright &copy; Chamman Corp. All Rights Reserved.</span>
+			</div>
+		</div>
+
+		<div class="footer__sns">
+			<ul class="sns-list">
+				<li><a href="#" aria-label="페이스북 바로가기"><img src="" alt="Facebook"></a></li>
+				<li><a href="#" aria-label="인스타그램 바로가기"><img src="" alt="Instagram"></a></li>
+				<li><a href="#" aria-label="카카오톡 채널 바로가기"><img src="" alt="Kakaotalk"></a></li>
+			</ul>
+		</div>
+
+	</div>
+</footer>

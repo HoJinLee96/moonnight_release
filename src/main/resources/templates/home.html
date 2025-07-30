@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title layout:fragment="title">달밤 청소</title>
+	<style type="text/css">
+		/* --- 간편 견적 바 --- */
+		.estimate-bar {
+			min-width: var(--layout-min-width);
+			max-width: var(--layout-max-width);
+			margin: 0px auto;
+			width: 100%;
+			padding: 10px 0;
+			line-height: 40px;
+			/* 높이 조절 */
+			background-color: #dbf1fd;
+			/* position, top, z-index는 JS로 제어 */
+			transition: all 0.2s ease-in-out;
+		}
+
+		/* JS로 추가될 클래스: 스크롤 시 상단 고정 스타일 */
+		.is-sticky {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 1000;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			/* 살짝 그림자 효과 */
+		}
+
+
+		.estimate-form {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 15px;
+			font-size: 14px;
+		}
+
+		.estimate-form__group {
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		.form-field {
+			outline: none;
+			border: 1px solid #ccc;
+			/* 테두리를 살짝 줘서 구분 */
+			border-radius: 4px;
+			padding: 5px 8px;
+			font-size: 14px;
+		}
+
+		.form-field--select {
+			border: none;
+			background-color: white;
+		}
+
+		.form-field--text {
+			width: 120px;
+		}
+
+		.btn-estimate {
+			border: 2px solid var(--main-color, #20367a);
+			border-radius: 7px;
+			background-color: var(--main-color, #20367a);
+			color: white;
+			cursor: pointer;
+			padding: 4px 10px;
+			font-size: 14px;
+			transition: all 0.2s;
+		}
+
+		.btn-estimate:hover {
+			background-color: white;
+			color: var(--main-color, #20367a);
+		}
+
+		.agreement-group input[type="checkbox"] {
+			margin: 0;
+			position: relative;
+			top: 1.5px;
+			cursor: pointer;
+		}
+
+		.agreement-group label {
+			cursor: pointer;
+		}
+
+		.agreement-group a {
+			text-decoration: none;
+			color: #555;
+			font-size: 14px;
+		}
+
+		/* --- 메인 콘텐츠 이미지 --- */
+		.main-content {
+			padding-top: 30px;
+			min-height: 1080px;
+		}
+
+		.main-image-wrapper {
+			max-width: 900px;
+			margin: 0 auto;
+			/* 중앙 정렬 */
+		}
+
+		.main-image-wrapper img {
+			display: block;
+			width: 100%;
+			margin-bottom: -5px;
+			/* 이미지 사이 미세한 간격 제거 */
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div id="estimateBar" class="estimate-bar">
+		<form class="estimate-form">
+			<div class="estimate-form__group">
+				<label for="phone">연락처</label>
+				<input type="text" id="phone" name="phone" class="form-field form-field--text" required
+					autocomplete="off">
+			</div>
+
+			<div class="estimate-form__group">
+				<select id="cleaningService" name="cleaningService" class="form-field form-field--select">
+					<option value="">서비스</option>
+					<option value="신축청소">신축 청소</option>
+					<option value="입주청소">입주 청소</option>
+					<option value="거주청소">거주 청소</option>
+					<option value="리모델링청소">리모델링 청소</option>
+					<option value="준공청소">준공 청소</option>
+					<option value="상가청소">상가 청소</option>
+					<option value="오피스청소">오피스 청소</option>
+					<option value="기타청소">기타 청소</option>
+				</select>
+			</div>
+
+			<div class="estimate-form__group">
+				<select id="region" name="region" class="form-field form-field--select">
+					<option value="">지역</option>
+					<option value="서울">서울특별시</option>
+					<option value="부산">부산광역시</option>
+					<option value="대구">대구광역시</option>
+					<option value="인천">인천광역시</option>
+					<option value="광주">광주광역시</option>
+					<option value="대전">대전광역시</option>
+					<option value="울산">울산광역시</option>
+					<option value="세종">세종특별자치시</option>
+					<option value="경기">경기도</option>
+					<option value="강원">강원도</option>
+					<option value="충북">충청북도</option>
+					<option value="충남">충청남도</option>
+					<option value="전북">전라북도</option>
+					<option value="전남">전라남도</option>
+					<option value="경북">경상북도</option>
+					<option value="경남">경상남도</option>
+					<option value="제주">제주특별자치도</option>
+				</select>
+			</div>
+
+			<button type="button" id="simpleEstimateRegister" class="btn btn-estimate">간편 견적 신청</button>
+
+			<div class="estimate-form__group agreement-group">
+				<input type="checkbox" id="agreement" name="agreement" required>
+				<label for="agreement">개인정보 수집 및 이용 동의</label>
+				<a href="javascript:;"
+					onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[보기]</a>
+			</div>
+
+			<input type="text" name="companyName" id="companyName"
+			  style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;" 
+			  tabindex="-1" autocomplete="off">
+		</form>
+	</div>
+
+	<div class="content-after-sticky">
+		<div class="container main-content">
+			<div class="main-image-wrapper">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal1.png" alt="달빛청소 서비스 소개 1">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal2.png" alt="달빛청소 서비스 소개 2">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal3.png" alt="달빛청소 서비스 소개 3">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal4.png" alt="달빛청소 서비스 소개 4">
+				<img src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal5.png" alt="달빛청소 서비스 소개 5">
+			</div>
+		</div>
+	</div>
+</main>
+<th:block layout:fragment="script">
+
+	<script th:inline="javascript" type="module">
+		import {initPhoneFormatting} from '/js/format.js';
+		import {registerSimpleEstimate} from '/js/simpleEstimate.js';
+
+		document.addEventListener('DOMContentLoaded', function () {
+
+			// 1. 필요한 요소들 로드
+			const estimateBar = document.getElementById('estimateBar');
+			const contentAfterSticky = document.querySelector('.content-after-sticky');
+			const simpleEstimateRegisterBtn = document.getElementById('simpleEstimateRegister');
+
+			// 간편 견적 바의 원래 위치를 파악한다 (페이지 상단으로부터의 거리).
+			const stickyPoint = estimateBar.offsetTop;
+			const stickyBarHeight = estimateBar.offsetHeight;
+
+			const phoneInput = document.getElementById('phone');
+			const agreementInput = document.getElementById('agreement');
+
+			// 요소가 없을 경우 에러 방지
+			if (!estimateBar) return;
+
+			// 2. 변수 선언
+
+			// 3. 함수 작성
+			function handleScroll() {
+				// 현재 스크롤된 Y축 위치가 원래 위치보다 커지면
+				if (window.scrollY > stickyPoint) {
+					// 'is-sticky' 클래스를 추가해서 position:fixed 스타일을 적용한다.
+					estimateBar.classList.add('is-sticky');
+					// ★★★ 콘텐츠가 딸려 올라오지 않도록, 다음 컨텐츠에 '견적 바'의 높이만큼 padding-top을 준다.
+					contentAfterSticky.style.paddingTop = stickyBarHeight + 'px';
+				} else {
+					// 스크롤이 다시 원래 위치로 돌아오면, 클래스와 패딩을 제거한다.
+					estimateBar.classList.remove('is-sticky');
+					contentAfterSticky.style.paddingTop = '0';
+				}
+			}
+
+			// 4. 이벤트 등록
+			window.addEventListener('scroll', handleScroll);
+			initPhoneFormatting(phoneInput);
+
+			simpleEstimateRegisterBtn.addEventListener('click', async () => {
+				if (agreementInput.checked !== true) {
+					alert("개인정보 수집 및 이용 동의는 필수입니다.");
+					return;
+				}
+				const phone = document.getElementById('phone').value.trim();
+				if (phone.length < 13) {
+					alert("휴대폰 번호를 확인해 주세요.");
+					return;
+				}
+				const companyName = document.getElementById('companyName');
+				if (companyName.value) {
+				  alert('잠시 후 시도해 주세요.');
+				  return;
+				}
+				
+				const simpleEstimateDto = {
+					phone: phone,
+					cleaningService: document.getElementById('cleaningService').value,
+					region: document.getElementById('region').value,
+					trap: companyName.value
+				};
+				
+				try {
+					await registerSimpleEstimate(simpleEstimateDto);
+					alert("간편 견적 문의가 성공적으로 접수되었습니다.\n빠른 시일 내에 담당자가 확인 후 연락드리겠습니다.");
+					window.location.reload();
+				} catch (error) {
+					alert(error.message);
+				}
+
+			});
+		});
+	</script>
+
+</th:block>
+
+</html>

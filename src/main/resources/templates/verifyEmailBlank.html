@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<html>
+<head>
+<meta charset="UTF-8">
+<title>이메일 인증</title>
+<style type="text/css">
+@font-face {
+	font-family: 'SF_HambakSnow';
+	src:
+		url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2106@1.1/SF_HambakSnow.woff')
+		format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
+* {
+	font-family: 'SF_HambakSnow', sans-serif;
+}
+</style>
+<style type="text/css">
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding-top: 20px;
+	min-height: 700px;
+	display: flex;
+	justify-content: center; /* 수평 중앙 정렬 */
+	
+}
+#loginForm label[for="phone"] {
+	text-align: left;
+	display: block;
+	margin: 0px;
+	padding: 0px;
+	margin-top: 15px; /* input과의 간격을 조정 */
+	font-size: 14px;
+}
+
+#phone, #verificationSmsCode, #email, #password, #confirmPassword{
+	width: 250px;
+	height: 40px;
+	border: none;
+	border-bottom: 2px solid #ccc;
+	outline: none;
+	transition: border-bottom-color 0.3s;
+	margin-right: 20px;
+}
+
+#phone:focus {
+	border-bottom: 2px solid #20367a;
+}
+
+#input-wrapper {
+	position: relative;
+	display: none; /* none <-> inline-block */
+}
+
+#verificationTimeMessage {
+	position: absolute;
+	top: 65%;
+	right: 40%;
+	transform: translateY(-50%);
+	font-size: 14px;
+	color: red;
+	pointer-events: none; /* 타이머가 클릭되지 않도록 설정 */
+}
+
+#sendSmsButton, #verifySmsCodeButton {
+	border: none;
+	background-color: #20367a;
+	color: white;
+	width: 130px;
+	height: 40px;
+	margin: 0px 3px;
+	border-radius: 8px;
+}
+
+#sendSmsButton:hover, #verifySmsCodeButton:hover, #updatePasswordButton:hover, #confirmButton:hover {
+	border: 1px solid #20367a;
+	background-color: white;
+	color: #20367a;
+	cursor: pointer;
+}
+
+#confirmDiv,#newPasswordDiv {
+	display: none; /* none <-> block */
+}
+
+#confirmButton,#updatePasswordButton {
+	border: none;
+	background-color: #20367a;
+	color: white;
+	width: 130px;
+	height: 40px;
+	border-radius: 8px;
+	margin-left: 35%
+}
+
+#confirmEmail {
+	padding: 10px 20px;
+	background-color: #ededed;
+}
+
+/* 닫기 버튼 스타일 */
+.close {
+	position: absolute;
+	top: 10px;
+	left: 10px; /* 왼쪽 위에 위치 */
+	color: #aaa;
+	font-size: 28px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.close:hover, .close:focus {
+	color: #20367a;
+	text-decoration: none;
+	cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+	<div class="container">
+		<div id="formDiv">
+			<span class="close" onclick="window.close()">&times;</span>
+			<h2>이메일 인증</h2>
+			<label for="email">이메일</label>
+			<br>
+			<input type="text" id="email" name="email" required readonly>
+			<button class="sendEmailButton" id="sendEmailButton" type="button">인증번호 발송</button>
+			<br> 
+			<span id="sendEmailMessage"></span> 
+			<br>
+			<div id="input-wrapper">
+				<label for="verificationCode">인증번호</label> 
+				<br> 
+				<input type="text" id="verificationSmsCode" name="verificationSmsCode" required oninput="formatCode(this)" maxlength="5" readonly disabled>
+				<div id="verificationTimeMessage"></div>
+				<button class="verifySmsCodeButton" id="verifySmsCodeButton" type="button" disabled>인증번호 확인</button>
+			</div>
+			<br> 
+			<span id="verificationSmsMessage"></span>
+		</div>
+	</div>
+
+</body>
+<!-- sms인증 -->
+<script type="text/javascript">
+var phoneInput = document.getElementById("phone");
+var sendSmsButton = document.getElementById("sendSmsButton");
+var verificationSmsCodeInput = document.getElementById("verificationSmsCode");
+var inputWrapper = document.getElementById("input-wrapper");
+var verifySmsCodeButton = document.getElementById("verifySmsCodeButton");
+var message = document.getElementById("verificationSmsMessage");
+const timerElement = document.getElementById('verificationTimeMessage');
+</script>
+<script src="../../static/js/verifyPhone.js"></script>
+
+<script type="text/javascript">
+document.getElementById('sendSmsButton').addEventListener('click', function(event) {
+	sendSms();	
+});
+document.getElementById('verifySmsCodeButton').addEventListener('click', function(event) {
+	verifySmsCode(function(result){
+		if(result){
+			var reqPhone = document.getElementById("phone").value;
+			window.opener.postMessage({ verifyPhoneStatus: 200, reqPhone: reqPhone }, "*");
+			window.close();
+		}
+	});
+});
+
+</script>
+</html>

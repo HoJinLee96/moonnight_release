@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>마이페이지</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+</head>
+
+<div layout:fragment="content">
+	<div class="container">
+		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
+
+		<div class="content">
+
+		</div>
+
+
+	</div>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
+	
+</div>
+</html>

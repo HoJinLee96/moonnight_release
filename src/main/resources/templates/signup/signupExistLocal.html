@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>회원 가입</title>
+	<style>
+		.form-wrapper {
+			display: flex;
+			justify-content: center;
+			padding: 70px 0;
+		}
+
+		.form-container {
+			width: 100%;
+			max-width: 700px;
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
+
+		.form-container h3 {
+			margin-top: 0;
+			margin-bottom: 40px;
+			text-align: center;
+		}
+
+		/* --- 범용 폼 스타일 (다른 페이지와 공유) --- */
+		.form-group {
+			margin-bottom: 10px;
+		}
+
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-size: 15px;
+			font-weight: bold;
+		}
+
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 16px;
+			box-sizing: border-box;
+			/* 패딩, 테두리를 너비에 포함 */
+			transition: border-color 0.3s;
+		}
+
+		.form-input:focus {
+			border-color: var(--main-color, #20367a);
+			outline: none;
+		}
+
+		.select-group {
+			display: grid;
+			gap: 20px;
+		}
+
+		.hide {
+			display: none;
+		}
+
+		.loginform {
+			max-width: 400px;
+			min-width: 400px;
+			margin: 0 auto;
+			border: 2px solid #20367a;
+			padding: 20px 100px 40px 100px;
+			border-radius: 10px;
+			text-align: center;
+		}
+
+		.title {
+			text-align: left;
+			margin-bottom: 50px;
+		}
+
+		#loginForm label[for="email"],
+		#loginForm label[for="password"] {
+			text-align: left;
+			display: block;
+			margin: 0px;
+			padding: 0px;
+			margin-top: 15px;
+			/* input과의 간격을 조정 */
+			font-size: 14px;
+		}
+
+		#email,
+		#password {
+			width: 400px;
+			height: 40px;
+			border: none;
+			border-bottom: 2px solid #ccc;
+			outline: none;
+			transition: border-bottom-color 0.3s;
+		}
+
+		#email:focus,
+		#password:focus {
+			border-bottom: 2px solid #20367a;
+		}
+
+		#OAutoLoginBlcok {
+			padding: 10px 0px 30px 0px;
+			display: flex;
+			justify-content: center;
+			/* 아이템 사이에 여백을 넣어 균등 배치 */
+			align-items: center;
+			/* 수직 정렬 */
+		}
+
+		#OAutoLoginBlcok a {
+			text-decoration: none;
+			display: block;
+			width: 60px;
+			height: 60px;
+			margin: 0px 5px;
+
+		}
+
+		#OAutoLoginBlcok img {
+			cursor: pointer;
+			width: 60px;
+			height: 60px;
+		}
+
+		#rememmberEmailCheckbox {
+			appearance: none;
+			/* 기본 스타일 제거 */
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			background-color: #fff;
+			border: 2px solid #ccc;
+			border-radius: 50%;
+			/* 동그랗게 만들기 */
+			width: 15px;
+			height: 15px;
+			cursor: pointer;
+			position: relative;
+			outline: none;
+			transition: background-color 0.2s, border-color 0.2s;
+		}
+
+		#rememmberEmailCheckbox:checked {
+			background-color: #20367a;
+			/* 체크된 배경색 */
+			border-color: #20367a;
+		}
+
+		#rememmberEmailCheckbox:checked::after {
+			content: '';
+			position: absolute;
+			top: 40%;
+			left: 50%;
+			width: 4px;
+			height: 8px;
+			border: solid white;
+			border-width: 0 2px 2px 0;
+			transform: translate(-50%, -50%) rotate(45deg);
+		}
+
+		label[for="rememmberEmailCheckbox"] {
+			font-size: 14px;
+			margin-right: 140px;
+			color: #666;
+		}
+
+		#findEmail,
+		#findPassword {
+			text-decoration: none;
+			color: #b1b1b1;
+			font-size: 14px;
+			margin-left: 5px;
+		}
+
+		#findEmail::after {
+			content: '';
+			border-right: 1px solid #e1e1e1;
+			padding-left: 5px;
+		}
+
+		#findEmail:hover,
+		#findPassword:hover {
+			color: #20367a;
+			cursor: pointer;
+		}
+
+		#etcActionDiv {
+			display: flex;
+			align-items: center;
+			margin-top: 20px;
+			line-height: normal;
+		}
+
+		.btn-primary {
+			margin-top: 20px;
+		}
+
+		.btn-tertiary {
+			width: 100%;
+			margin-top: 10px;
+		}
+
+		#underline-text {
+			width: 400px;
+			position: relative;
+			display: inline-block;
+			margin: 10px 0px;
+		}
+
+		#underline-text::after {
+			content: "다른 방법 로그인";
+			color: #b1b1b1;
+			background-color: white;
+			padding: 0px 15px;
+			font-size: 15px;
+		}
+
+		#underline-text::before {
+			content: '';
+			position: absolute;
+			width: 100%;
+			height: 1px;
+			background-color: #e1e1e1;
+			top: 10px;
+			left: 0px;
+			z-index: -1;
+		}
+
+		.emailDiv {
+			display: inline;
+			position: relative;
+		}
+
+		#emailInitButton {
+			display: none;
+			position: absolute;
+			right: 10px;
+			top: 30px;
+			border: 1px solid #d0d0d0;
+			border-radius: 50%;
+			padding: 0px 4px;
+			font-size: 12px;
+			color: white;
+			background: #d0d0d0;
+			cursor: pointer;
+		}
+
+		.passwordDiv {
+			display: inline;
+			position: relative;
+		}
+
+		#passwordViewButton {
+			background-image: url('https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/eyeHiddenIcon.png');
+			background-size: cover;
+			width: 17px;
+			height: 17px;
+
+			display: none;
+			position: absolute;
+			right: 40px;
+			top: 43px;
+			cursor: pointer;
+		}
+
+		#passwordInitButton {
+			display: none;
+			position: absolute;
+			right: 10px;
+			top: 43px;
+			border: 1px solid #d0d0d0;
+			border-radius: 50%;
+			padding: 0px 4px;
+			font-size: 12px;
+			color: white;
+			background: #d0d0d0;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="form-wrapper">
+		<div class="form-container">
+			<h3>이미 같은 이메일로 통합 유저가 존재합니다.</h3>
+			<div class="select-group" id="select-group">
+				<button type="button" class="btn btn-primary" id="signUpLinkBtn">연동하기</button>
+				<button type="button" class="btn btn-secondary" id="signInBtn">이전으로</button>
+			</div>
+			<div class="form-group hide" id="form-group">
+				<div class="loginform">
+					<h2 class="title">로그인</h2>
+					<form id="loginForm">
+						<div class="emailDiv">
+							<label for="email">이메일</label>
+							<input type="email" class="email" id="email" readonly th:value="${email}">
+							<div id="emailInitButton">&times;</div>
+						</div>
+						<div class="passwordDiv">
+							<label for="password">비밀번호</label>
+							<input type="password" id="password" name="password" required placeholder="password">
+							<div id="passwordViewButton"></div>
+							<div id="passwordInitButton">&times;</div>
+						</div>
+						<div id="etcActionDiv">
+							<input type="checkbox" id="rememberEmailCheckbox" name="rememberEmailCheckbox">
+							<label for="rememberEmailCheckbox">이메일 저장</label>
+							<a id="findPassword">비밀번호 찾기</a>
+						</div>
+						<button class="btn btn-primary" id="signInButton" type="submit">로그인</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</main>
+<th:block layout:fragment="script">
+	<script th:inline="javascript" type="module">
+		import {signUpLinkOAuth} from '/js/sign.js';
+		import {passwordViewToggle, inputValueInit, buttonDisplay, openblankWindow} from '/js/ui-controller.js';
+		
+		const encodedRedirect = /*[[${redirect}]]*/ null;
+
+		document.addEventListener("DOMContentLoaded", () => {
+			const selectGroup = document.getElementById("select-group");
+			const formGroup = document.getElementById("form-group");
+			const signUpLinkBtn = document.getElementById("signUpLinkBtn");
+			const signInBtn = document.getElementById("signInBtn");
+			const findPasswordBtn = document.getElementById("findPassword");
+
+			var password = document.getElementById('password');
+			var passwordInitButton = document.getElementById('passwordInitButton');
+			var passwordViewButton = document.getElementById('passwordViewButton');
+			
+			password.addEventListener('input', function () {
+				buttonDisplay(password, passwordInitButton);
+				buttonDisplay(password, passwordViewButton);
+			});
+			password.addEventListener('blur', function () {
+				buttonDisplay(password, passwordInitButton);
+				buttonDisplay(password, passwordViewButton);
+			});
+			passwordInitButton.addEventListener('click', function () {
+				inputValueInit(password, passwordInitButton);
+				inputValueInit(password, passwordViewButton);
+			});
+			passwordViewButton.addEventListener('click', function () {
+				passwordViewToggle(password, passwordViewButton);
+			});
+			
+			signUpLinkBtn.addEventListener('click', () => {
+				formGroup.className = "form-group";
+				selectGroup.className = "select-group hide";
+			});
+
+			signInBtn.addEventListener('click', () => {window.location.href = '/signin'});
+		});
+		
+		document.getElementById("loginForm").addEventListener("submit", async (e) => {
+			e.preventDefault(); // 폼의 기본 제출 막기
+
+			const email = document.getElementById("email").value;
+			const password = document.getElementById("password").value;
+			const rememberEmail = document.getElementById("rememberEmailCheckbox").checked;
+
+			const signInDto = {
+				email: email,
+				password: password
+			};
+			try {
+				await signUpLinkOAuth(signInDto, rememberEmail, encodedRedirect);
+			} catch (error) {
+				console.log(error);
+				alert(error.message);
+			}
+		});
+
+	</script>
+
+</th:block>
+
+</html>

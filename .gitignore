@@ -1,0 +1,42 @@
+# === Maven 빌드 결과물 ===
+/target/
+!/src/**/resources/static/      # 혹시 잘못 제외될까 봐 안전 장치
+
+# === Eclipse / STS4 설정 파일 ===
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+.recommenders/
+HELP.md
+
+# === OS 임시 파일 ===
+.DS_Store
+Thumbs.db
+
+# === 로그 파일 ===
+*.log
+/logs
+
+# === 빌드 중 생성되는 메타파일 ===
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.rej
+
+# === 테스트 결과물 ===
+/test-classes/
+/generated-test-sources/
+/generated-sources/
+
+# === 실행 중 생길 수 있는 임시 디렉토리 ===
+/bin/
+/build/
+
+# === 민감 설정 파일 (선택적, 로컬 개발용일 경우) ===
+application.properties
+.env
+*.env

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>회원 가입</title>
+	<style>
+		/* --- 전체 폼 레이아웃 --- */
+		.form-wrapper {
+			display: flex;
+			justify-content: center;
+			padding: 70px 0;
+		}
+
+		.form-container {
+			width: 100%;
+			max-width: 500px;
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
+
+		.select-modal-content {
+			background: white;
+			padding: 30px 40px;
+			border-radius: 8px;
+			width: 90%;
+			max-width: 400px;
+			/* 모달 너비 조정 */
+			position: relative;
+			max-height: 95vh;
+			/* 화면 높이의 95%로 최대 높이 제한 */
+			overflow-y: auto;
+			/* 내용이 길어지면 자동 스크롤 */
+			animation: fadeIn 0.3s;
+		}
+		.select-form{
+			display: flex;
+			justify-content: center;
+			gap: 50px;
+		}
+		.select-modal-content h3, .select-modal-content h4 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="form-wrapper">
+		<div class="select-modal-content">
+			<h3>계정 선택</h3>
+			<h4>탈퇴 이후 30일이 지나지 않아 선택해 주세요.</h4>
+			<div class="select-form">
+				<button type="button" class="btn btn-secondary" id="restoration">계정 복구</button>
+				<button type="button" class="btn btn-primary-mini" id="new">신규 계정</button>
+			</div>
+		</div>		
+	</div>
+</main>
+
+<th:block layout:fragment="script">
+
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+	<script th:inline="javascript" type="module">
+		document.addEventListener("DOMContentLoaded", () => {
+			const restorationBtn = document.getElementById('restoration');
+			const newBtn = document.getElementById('new');
+
+			restorationBtn.addEventListener('click',()=>location.replace("/signup/restoration"));
+			newBtn.addEventListener('click',()=>location.replace("/signup/oauth"));
+		});
+	</script>
+</th:block>
+
+</html>

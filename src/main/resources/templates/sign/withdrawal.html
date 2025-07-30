@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>회원탈퇴</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<style type="text/css">
+		/* 안내 문구 섹션 */
+		.withdrawal-notice {
+			padding: 20px;
+			background-color: #f8f9fa;
+			border: 1px solid #e9ecef;
+			border-radius: 8px;
+			margin-bottom: 40px;
+		}
+
+		.withdrawal-notice h3 {
+			margin-top: 0;
+			font-size: 16px;
+		}
+
+		.withdrawal-notice ul {
+			padding-left: 20px;
+			margin: 0;
+			font-size: 14px;
+			line-height: 1.7;
+			color: #555;
+		}
+
+		/* 범용 폼 스타일 (다른 페이지와 공유) */
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-label {
+			display: block;
+			font-weight: bold;
+			margin-bottom: 8px;
+		}
+
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			box-sizing: border-box;
+		}
+
+		.checkbox-group label {
+			cursor: pointer;
+			font-weight: bold;
+		}
+
+		.checkbox-group input {
+			margin-right: 8px;
+			vertical-align: middle;
+		}
+
+		/* 버튼 스타일 */
+		.form-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 40px;
+			padding-top: 20px;
+			border-top: 1px solid #eee;
+		}
+
+		.btn {
+			padding: 10px 25px;
+			border: none;
+			border-radius: 5px;
+			font-size: 15px;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		.btn--secondary {
+			background-color: #6c757d;
+			color: white;
+		}
+
+		.btn--danger {
+			background-color: #dc3545;
+			color: white;
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="container">
+		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
+		<div class="content">
+			<div class="form-container">
+				<h2 class="contentTitle">회원 탈퇴</h2>
+
+				<div class="withdrawal-notice">
+					<h3>회원탈퇴에 앞서 아래 내용을 반드시 확인해 주세요.</h3>
+					<ul>
+						<li>탈퇴 시 일부 회원 정보 및 서비스 이용 기록(견적서 등)은 관련 법령 및 내부 방침에 따라 30일간 보관 후 삭제됩니다.</li>
+						<li>보관 기간(30일) 내에는 계정 복구가 가능하며, 이후에는 모든 정보가 영구적으로 삭제되어 복구가 불가능합니다.</li>
+						<li>탈퇴 후에는 동일한 이메일로 즉시 재가입이 가능하며, 이전 데이터는 복구 됩니다.</li>
+					</ul>
+				</div>
+
+				<form id="withdrawalForm">
+					<div class="form-group">
+						<label for="password" class="form-label">계정 비밀번호 확인</label>
+						<input type="password" id="password" class="form-input" placeholder="본인 확인을 위해 비밀번호를 입력해주세요."
+							required>
+					</div>
+
+					<div class="form-group checkbox-group">
+						<input type="checkbox" id="confirm-checkbox" class="required-checkbox">
+						<label for="confirm-checkbox">위 안내 사항을 모두 확인하였으며, 이에 동의합니다.</label>
+					</div>
+
+					<div class="form-actions">
+						<button type="button" id="cancelBtn" class="btn btn--secondary">취소</button>
+						<button type="submit" id="withdrawalBtn" class="btn btn--danger">탈퇴하기</button>
+					</div>
+				</form>
+
+			</div>
+		</div>
+	</div>
+</main>
+<th:block layout:fragment="script">
+	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
+	<script type="module" th:inline="javascript">
+		import {deleteLocalUser} from '/js/sign.js';
+
+		document.addEventListener("DOMContentLoaded", function () {
+			const withdrawalBtn = document.getElementById('withdrawalBtn');
+			const cancelBtn = document.getElementById('cancelBtn');
+			const passwordInput = document.getElementById('password');
+			const confirmCheckbox = document.getElementById('confirm-checkbox');
+
+			// '탈퇴하기' 버튼 클릭 이벤트
+			withdrawalBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+
+				// --- [★★추가★★] 유효성 검증 로직 ---
+				// 1. 비밀번호 입력 확인
+				if (passwordInput.value.trim() === '') {
+					alert('본인 확인을 위해 비밀번호를 입력해주세요.');
+					passwordInput.focus();
+					return;
+				}
+
+				// 2. 동의 체크박스 확인
+				if (!confirmCheckbox.checked) {
+					alert('안내 사항에 동의해주세요.');
+					return;
+				}
+
+				// 3. 최종 확인
+				if (!confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+					return;
+				}
+				// --- 유효성 검증 끝 ---
+
+				try {
+					const json = await deleteLocalUser(passwordInput.value);
+
+					alert("회원 탈퇴가 정상적으로 처리되었습니다.");
+					window.location.href = "/";
+				} catch (error) {
+					console.error("탈퇴 처리 실패:", error);
+					alert(error.message);
+				}
+			});
+
+			// '취소' 버튼 클릭 시 이전 페이지로 이동
+			cancelBtn.addEventListener('click', () => {
+				history.back();
+			});
+		});
+	</script>
+</th:block>
+
+</html>

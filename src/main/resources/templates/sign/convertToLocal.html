@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>통합 유저 변경</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<style>
+		/* --- 전체 폼 레이아웃 --- */
+		.form-wrapper {
+			display: flex;
+			justify-content: center;
+			padding: 70px 0;
+		}
+
+		.form-container {
+			width: 100%;
+			max-width: 500px;
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid var(--border-color, #efefef);
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
+
+		.form-container h2 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+		.form-description {
+			text-align: center;
+			font-size: 15px;
+			color: #666;
+			margin-bottom: 40px;
+			line-height: 1.6;
+		}
+
+		/* --- 범용 폼 스타일 --- */
+		.form-group {
+			margin-bottom: 25px;
+		}
+
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-size: 15px;
+			font-weight: bold;
+		}
+
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 16px;
+			box-sizing: border-box;
+			transition: border-color 0.3s;
+		}
+
+		.form-input:focus {
+			border-color: var(--main-color, #20367a);
+			outline: none;
+		}
+
+		.form-input:read-only,
+		.form-input:disabled {
+			background-color: #f2f2f2;
+		}
+
+		/* --- 버튼 스타일 (base.html과 공유) --- */
+		.btn {
+			height: 45px;
+			padding: 0 20px;
+			border: none;
+			border-radius: var(--base-border-radius, 5px);
+			font-size: 15px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+		}
+
+		/* --- 페이지 맞춤 레이아웃 --- */
+		.input-with-button {
+			display: flex;
+			gap: 10px;
+		}
+
+		.input-with-icon {
+			position: relative;
+			width: 100%;
+			/* 부모 너비를 꽉 채우도록 */
+		}
+
+		.timerDisplay {
+			width: 35px;
+			position: absolute;
+			right: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: var(--error-color, red);
+			font-weight: bold;
+			font-size: 14px;
+		}
+
+		.btn-icon {
+			position: absolute;
+			right: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 20px;
+			height: 20px;
+			background-color: transparent;
+			border: none;
+			cursor: pointer;
+			padding: 0;
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+		}
+
+		.btn-view-password {
+			background-image: url('https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/eyeHiddenIcon.png');
+		}
+
+		.form-actions {
+			margin-top: 40px;
+			border-top: 1px solid var(--border-color, #efefef);
+			padding-top: 30px;
+		}
+
+		.feedback-message {
+			display: block;
+			height: 14px;
+			margin-top: 5px;
+			font-size: 14px;
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="form-wrapper">
+		<form id="convertToLocalForm" class="form-container">
+			<h2>통합 계정으로 변경</h2>
+			<p class="form-description">
+				새로운 이메일을 인증하고 비밀번호를 설정하여<br>
+				모든 서비스를 이용할 수 있는 통합 계정으로 변경합니다.
+			</p>
+
+			<div class="form-group">
+				<label for="email" class="form-label">새 이메일 주소</label>
+				<div class="input-with-button">
+					<input type="email" id="email" class="form-input" required placeholder="example@example.com">
+					<button type="button" class="btn btn-primary-mini" id="sendEmailButton">인증번호 발송</button>
+				</div>
+				<span id="emailMessage" class="feedback-message"></span>
+			</div>
+
+			<div id="verification-group" class="form-group" style="display: none;">
+				<label for="verificationCodeInput" class="form-label">인증번호</label>
+				<div class="input-with-button">
+					<div class="input-with-icon">
+						<input type="text" id="verificationCodeInput" class="form-input" required maxlength="6" disabled>
+						<span id="timerDisplay" class="timerDisplay">03:00</span>
+					</div>
+					<button type="button" class="btn btn--secondary" id="verifyMailCodeButton" disabled>인증 확인</button>
+				</div>
+				<span id="verificationEmailMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-group">
+				<label for="password" class="form-label">새 비밀번호</label>
+				<div class="input-with-icon">
+					<input type="password" id="password" class="form-input" required placeholder="비밀번호 입력">
+					<button type="button" class="btn-icon btn-view-password" id="passwordViewBtn"></button>
+				</div>
+				<span id="passwordMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-group">
+				<label for="confirmPassword" class="form-label">새 비밀번호 확인</label>
+				<div class="input-with-icon">
+					<input type="password" id="confirmPassword" class="form-input" required placeholder="비밀번호 다시 입력">
+					<button type="button" class="btn-icon btn-view-password" id="confirmPasswordViewBtn"></button>
+				</div>
+				<span id="confirmPasswordMessage" class="feedback-message"></span>
+			</div>
+
+			<div class="form-actions">
+				<button class="btn btn-primary" id="convertButton" type="submit">변경 완료</button>
+			</div>
+		</form>
+	</div>
+</main>
+<th:block layout:fragment="script">
+	<script type="module">
+
+		import {initVerificationCodeFormatting} from '/js/format.js';
+		import {validate, validateConfirmPassword} from '/js/validate.js';
+		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
+		import {isEmailExistForConvertToLocal} from '/js/user.js';
+		import {startCountdown, stopCountdown} from '/js/timer.js';
+		import {convertToLocal, signOut} from '/js/sign.js';
+
+		document.addEventListener('DOMContentLoaded', () => {
+
+			// --- 2. DOM 요소 가져오기 ---
+			const emailInput = document.getElementById('email');
+			const sendEmailButton = document.getElementById('sendEmailButton');
+			const emailMessageSpan = document.getElementById('emailMessage');
+
+			const verificationGroup = document.getElementById('verification-group');
+			const verificationCodeInput = document.getElementById('verificationCodeInput');
+			const timerDisplay = document.getElementById('timerDisplay');
+			const verifyMailCodeButton = document.getElementById('verifyMailCodeButton');
+			const verificationEmailMessage = document.getElementById('verificationEmailMessage');
+
+			const passwordInput = document.getElementById('password');
+			const confirmPasswordInput = document.getElementById('confirmPassword');
+			const passwordMessage = document.getElementById('passwordMessage');
+			const confirmPasswordMessage = document.getElementById('confirmPasswordMessage');
+			const convertButton = document.getElementById('convertButton');
+
+			// --- 3. 이벤트 리스너 등록 ---
+
+			// [이벤트] 인증번호 발송 버튼 클릭
+			sendEmailButton.addEventListener('click', async () => {
+				sendEmailButton.disabled = true;
+				sendEmailButton.textContent = '발송 중...';
+				emailMessageSpan.textContent = '';
+				verificationEmailMessage.innerText = '';
+
+				try {
+					const email = emailInput.value;
+
+					// 2. 이메일 중복 검사 API 호출
+					await isEmailExistForConvertToLocal(email);
+
+					// 3. 인증번호 발송 API 호출
+					await sendEmail(email);
+
+					// 4. 모든 요청 성공 시 UI 업데이트
+					alert("인증번호가 발송되었습니다.");
+					verificationGroup.style.display = 'block';
+					emailMessageSpan.style.color = 'green';
+					emailMessageSpan.innerText = "인증번호가 발송되었습니다.";
+					emailInput.readOnly = true;
+					sendEmailButton.textContent = '재전송';
+					verificationCodeInput.disabled = false;
+					verifyMailCodeButton.disabled = false;
+
+					startCountdown(180, timerDisplay, () => {
+						verificationEmailMessage.innerText = "시간이 초과되었습니다. 재전송 버튼을 눌러주세요.";
+						verificationEmailMessage.style.color = 'red';
+						verifyMailCodeButton.disabled = true;
+					});
+
+				} catch (error) {
+					alert(error.message);
+					emailMessageSpan.style.color = 'red';
+					emailMessageSpan.innerText = error.message;
+					emailInput.focus();
+					sendEmailButton.textContent = '인증번호 발송';
+				} finally {
+					sendEmailButton.disabled = false;
+				}
+			});
+
+			// [이벤트] 인증번호 확인 버튼 클릭
+			verifyMailCodeButton.addEventListener('click', async () => {
+				verifyMailCodeButton.disabled = true;
+				verifyMailCodeButton.textContent = '확인 중...';
+				verificationEmailMessage.textContent = '';
+
+				try {
+					const email = emailInput.value;
+					const code = verificationCodeInput.value;
+
+					validate('code', code);
+					await verifyMailCode(email, code);
+
+					alert("인증에 성공했습니다.");
+					verificationEmailMessage.style.color = 'green';
+					verificationEmailMessage.innerText = "인증되었습니다.";
+					stopCountdown(timerDisplay);
+
+					// 인증 성공 후 필드들 비활성화
+					sendEmailButton.disabled = true;
+					verificationCodeInput.disabled = true;
+					verifyMailCodeButton.disabled = true;
+					passwordInput.focus();
+					convertButton.disabled=false;
+
+				} catch (error) {
+					alert(error.message);
+					verificationEmailMessage.style.color = 'red';
+					verificationEmailMessage.innerText = error.message;
+					verifyMailCodeButton.disabled = false;
+				} finally {
+					verifyMailCodeButton.textContent = '인증번호 확인';
+				}
+			});
+			
+			// [이벤트] '비밀번호' 입력 필드
+			passwordInput.addEventListener('input', () => {
+				try {
+					validate('password', passwordInput.value);
+					passwordMessage.textContent = '사용 가능한 비밀번호입니다.';
+					passwordMessage.style.color = 'green';
+				} catch (error) {
+					passwordMessage.textContent = error.message;
+					passwordMessage.style.color = 'red';
+				}
+
+				validateConfirmPassword(passwordInput, confirmPasswordInput, confirmPasswordMessage);
+			});
+			
+			// [이벤트] '비밀번호 확인' 입력 필드
+			confirmPasswordInput.addEventListener('input', () => {
+				validateConfirmPassword(passwordInput, confirmPasswordInput, confirmPasswordMessage);
+			});
+			
+			convertButton.addEventListener('click', async (e) => {
+				e.preventDefault();
+				convertButton.disabled = true;
+
+				const email = emailInput.value;
+				const password = passwordInput.value;
+				const confirmPassword = confirmPasswordInput.value;
+				const convertToLocalRequestDto = {
+					email: emailInput.value,
+					password: passwordInput.value,
+					confirmPassword: confirmPasswordInput.value
+				};
+				
+				try{
+					await convertToLocal(convertToLocalRequestDto);
+					alert("성공적으로 통합 계정으로 변경되었습니다.");
+					alert("통합 계정으로 다시 로그인해 주세요.");
+					await signOut();
+					window.location.href="/signin"
+				} catch (error){
+					alert(error.message);
+				} finally {
+					convertButton.disabled = false;
+				}
+			});
+			
+		});
+	</script>
+</th:block>
+
+</html>

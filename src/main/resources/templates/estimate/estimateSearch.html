@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>견적서 조회</title>
+	<style>
+		/* 전체 컨테이너 스타일 */
+		.search-container {
+			max-width: 800px;
+			margin: 50px auto;
+			padding: 40px;
+			border: 1px solid #ddd;
+			border-radius: 10px;
+			background-color: #f9f9f9;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			position: relative;
+			animation: fadeIn 0.5s;
+
+		}
+
+		h2 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 40px;
+			border-bottom: 2px solid #20367a;
+			padding-bottom: 15px;
+		}
+
+		/* 탭 메뉴 스타일 */
+		.tab-menu {
+			display: flex;
+			border-bottom: 1px solid #ccc;
+			margin-bottom: 30px;
+		}
+
+		.tab-menu .tab-link {
+			padding: 10px 20px;
+			cursor: pointer;
+			border: none;
+			background-color: transparent;
+			font-size: 16px;
+			font-weight: bold;
+			color: #888;
+			transition: all 0.3s ease;
+			border-bottom: 3px solid transparent;
+		}
+
+		.tab-menu .tab-link.active {
+			color: #20367a;
+			border-bottom-color: #20367a;
+		}
+
+		/* 탭 컨텐츠 스타일 */
+		.tab-content {
+			display: none;
+			animation: fadeIn 0.5s;
+		}
+
+		.tab-content.active {
+			display: block;
+		}
+
+		/* 폼 그룹 및 입력 필드 스타일 */
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: bold;
+			color: #555;
+		}
+
+		.form-group input[type="text"],
+		.form-group input[type="email"],
+		.form-group select,
+		.form-textarea {
+			width: 100%;
+			padding: 9px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			box-sizing: border-box;
+			font-size: 16px;
+		}
+
+		.input-with-button {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			/* 세로 중앙 정렬 추가 */
+		}
+
+		.input-with-button input {
+			flex-grow: 1;
+		}
+
+		#sendAuthCodeBtn {
+			min-width: 130px;
+		}
+
+		#verifyAuthCodeBtn {
+			min-width: 70px;
+		}
+
+		.timer {
+			width: 35px;
+			color: red;
+			font-weight: bold;
+			font-size: 14px;
+			padding: 0 10px;
+		}
+
+		/* 설명 텍스트 스타일 */
+		.description {
+			background-color: #e9ecef;
+			padding: 20px;
+			border-radius: 5px;
+			text-align: center;
+			color: #495057;
+			margin-bottom: 20px;
+		}
+
+		.description a {
+			color: #20367a;
+			font-weight: bold;
+			text-decoration: none;
+		}
+
+		.description a:hover {
+			text-decoration: underline;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		/* ★★★ 결과 표시 컨테이너 스타일 ★★★ */
+		#estimate-results-container {
+			max-width: 800px;
+			margin: 20px auto;
+			padding: 0 20px;
+		}
+
+		/* ★★★ 로딩 스피너 ★★★ */
+		.loading-spinner {
+			display: flex;
+			justify-content: center;
+			padding: 40px;
+		}
+
+		.loading-spinner::after {
+			content: '';
+			width: 40px;
+			height: 40px;
+			border: 4px solid #f3f3f3;
+			border-top: 4px solid #20367a;
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		/* ★★★ 견적 리스트 스타일 ★★★ */
+		.estimate-list-item {
+			background: #fff;
+			border: 1px solid #e9ecef;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 15px;
+			cursor: pointer;
+			transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.estimate-list-item:hover {
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+			transform: translateY(-2px);
+		}
+
+		.estimate-summary-info {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		.estimate-summary-info .name {
+			font-weight: bold;
+		}
+
+		.estimate-summary-info .service {
+			color: #555;
+		}
+
+		.estimate-status-badge {
+			padding: 5px 12px;
+			border-radius: 15px;
+			font-size: 12px;
+			font-weight: bold;
+			color: white;
+		}
+
+		.status-RECEIVE {
+			background-color: #6c757d;
+		}
+
+		/* 회색 */
+		.status-IN_PROGRESS {
+			background-color: #0d6efd;
+		}
+
+		/* 파랑 */
+		.status-COMPLETE {
+			background-color: #198754;
+		}
+
+		/* 녹색 */
+
+		/* ★★★ 상세 보기 스타일 ★★★ */
+		.estimate-detail-view {
+			background: #fff;
+			border: 1px solid #e9ecef;
+			border-radius: 8px;
+			padding: 30px;
+			margin-top: 20px;
+			animation: fadeIn 0.5s;
+		}
+
+		.detail-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 15px;
+			margin-bottom: 20px;
+		}
+
+		.detail-header .estimate-id {
+			font-size: 1.2em;
+			font-weight: bold;
+		}
+
+		.detail-section {
+			margin-bottom: 25px;
+		}
+
+		.detail-section h4 {
+			margin: 0 0 10px 0;
+			font-size: 16px;
+			color: #333;
+		}
+
+		.detail-info,
+		.detail-content,
+		.detail-images {
+			padding: 15px;
+			background: #f8f9fa;
+			border-radius: 5px;
+			font-size: 15px;
+			line-height: 1.7;
+		}
+
+		.detail-content {
+			white-space: pre-wrap;
+			/* \n 줄바꿈 적용 */
+		}
+
+		.detail-images {
+			display: flex;
+			gap: 5px;
+			flex-wrap: wrap;
+		}
+
+		.detail-images img,
+		.image-preview-item img {
+			width: 100px;
+			height: 100px;
+			object-fit: cover;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		#edit-image-preview {
+			display: flex;
+			gap: 5px;
+			flex-wrap: wrap;
+			margin-top: 15px;
+			min-width: 655px;
+		}
+
+		.image-preview-item {
+			position: relative;
+		}
+
+		.image-preview-item button {
+			position: absolute;
+			right: 0px;
+			top: 2px;
+			border: none;
+			background: none;
+			font-size: 15px;
+			color: white;
+			cursor: pointer;
+		}
+
+		.detail-actions {
+			text-align: right;
+			margin-top: 30px;
+			position: relative;
+			/* 툴팁 기준점 */
+		}
+
+		.detail-actions .btn {
+			width: auto;
+			padding: 8px 15px;
+			font-size: 14px;
+		}
+
+		/* ★★★ 비활성화 버튼 툴팁 스타일 ★★★ */
+		.tooltip {
+			position: absolute;
+			bottom: 110%;
+			/* 버튼 바로 위에 표시 */
+			right: 0;
+			background-color: #333;
+			color: white;
+			padding: 8px 12px;
+			border-radius: 5px;
+			font-size: 12px;
+			white-space: nowrap;
+			opacity: 0;
+			visibility: hidden;
+			transition: opacity 0.2s, visibility 0.2s;
+			z-index: 10;
+		}
+
+		.btn[disabled]:hover+.tooltip {
+			opacity: 1;
+			visibility: visible;
+		}
+
+		/* 수정 모달 스타일 */
+		.edit-modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+			padding: 20px 0;
+			/* 상하 여백 추가 */
+		}
+
+		.edit-modal-content {
+			background: white;
+			padding: 30px 40px;
+			border-radius: 8px;
+			width: 90%;
+			max-width: 700px;
+			/* 모달 너비 조정 */
+			position: relative;
+			max-height: 95vh;
+			/* 화면 높이의 95%로 최대 높이 제한 */
+			overflow-y: auto;
+			/* 내용이 길어지면 자동 스크롤 */
+			animation: fadeIn 0.3s;
+		}
+
+		.edit-modal-content h3 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+		.edit-modal-content .form-group {
+			margin-bottom: 18px;
+		}
+
+		.edit-modal-content .form-label {
+			font-size: 15px;
+			margin-bottom: 6px;
+		}
+
+		/* 모달 내 인증 영역 */
+
+		.verified-state,
+		.unverified-state {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			justify-content: space-between;
+		}
+
+		.verified-state input {
+			color: #198754;
+			/* 녹색 */
+			font-weight: bold;
+		}
+
+		/* 이미지 미리보기 영역 */
+		#edit-image-preview {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 10px;
+			padding: 10px;
+			background-color: #f8f9fa;
+			border-radius: 5px;
+			min-height: 100px;
+		}
+
+		.edit-image-item {
+			position: relative;
+			width: 100px;
+			height: 100px;
+		}
+
+		.edit-image-item img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			border-radius: 5px;
+		}
+
+		/* 모달 하단 버튼 */
+		.modal-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 30px;
+			padding: 20px 0px 20px 0px;
+			border-top: 1px solid #eee;
+		}
+
+		/* 토글 버튼 스타일 */
+		.toggle-btn {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			width: 30px;
+			height: 30px;
+			border: 1px solid #f9f9f9;
+			border-radius: 10%;
+			background-color: #20367a;
+			color: white;
+			font-size: 14px;
+			cursor: pointer;
+			transition: transform 0.3s ease;
+			display: flex;
+			/* 아이콘 중앙 정렬용 */
+			justify-content: center;
+			align-items: center;
+		}
+
+		.toggle-btn:hover {
+			background-color: white;
+			color: #20367a;
+		}
+
+		/* 검색창이 접혔을 때의 토글 버튼 아이콘 모양 변경 */
+		.search-container.collapsed .toggle-btn {
+			transform: rotate(180deg);
+			/* 아이콘을 아래 방향으로 회전 */
+		}
+
+		/* 유령 클릭 방지를 위한 핵심 스타일 */
+		.search-form-wrapper {
+			transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+			opacity: 1;
+			visibility: visible;
+		}
+
+		.search-container.collapsed .search-form-wrapper {
+			opacity: 0;
+			visibility: hidden;
+			display: none;
+			/* JS에서 제어할 것임 */
+		}
+
+		/* --- 피드백 말풍선(Tooltip) 스타일 --- */
+		.feedback-tooltip {
+			position: absolute;
+			/* 다른 요소에 영향을 주지 않고 위치를 잡기 위해 */
+			padding: 10px 15px;
+			background-color: #333;
+			/* 어두운 배경 */
+			color: white;
+			/* 흰색 글씨 */
+			border-radius: 6px;
+			font-size: 14px;
+			z-index: 1001;
+			/* 모달보다는 위에, 다른 요소들보다도 위에 */
+
+			/* 기본 상태는 숨김 */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(10px);
+			/* 살짝 아래에서 시작 */
+
+			/* 부드러운 전환 효과 */
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+		}
+
+		/* 말풍선을 보여줄 때 적용할 클래스 */
+		.feedback-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+			/* 원래 위치로 */
+		}
+
+		/* 개인 추가 */
+
+		#timer {
+			min-width: 40px;
+		}
+
+		.estimate-list-btn-div {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 20px;
+		}
+
+		.edit-image {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.edit-address-first-line {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 5px;
+		}
+
+		.btn-sm {
+			width: 130px;
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="search-container">
+		<h2 class="search-title">견적서 조회️</h2>
+		<button type="button" id="toggle-search-btn" class="toggle-btn" title="검색창 열기/닫기">▲</button>
+		<div class="search-form-wrapper">
+			<div class="tab-menu">
+				<button class="tab-link active" data-tab="tab-mypage">마이페이지</button>
+				<button class="tab-link" data-tab="tab-auth">본인인증</button>
+				<button class="tab-link" data-tab="tab-number">견적번호</button>
+			</div>
+
+			<div id="tab-mypage" class="tab-content active">
+				<div class="description">
+					<p>로그인 후 마이페이지에서 모든 견적 내역을 확인하실 수 있습니다.</p>
+				</div>
+				<button type="button" class="btn btn-primary" onclick="location.href='/my/estimate'">마이페이지로 이동</button>
+			</div>
+			<div id="tab-auth" class="tab-content">
+				<form id="authSearchForm" onsubmit="return false;">
+					<div class="form-group">
+						<label for="authType">인증 수단 선택</label>
+						<select id="authType" name="authType">
+							<option value="phone">휴대폰 인증</option>
+							<option value="email">이메일 인증</option>
+						</select>
+					</div>
+					<div class="form-group input-with-button">
+						<input type="text" id="authValue" name="authValue" placeholder="휴대폰 번호 입력" required>
+						<button type="button" class="btn btn-secondary" id="sendAuthCodeBtn">인증번호 발송</button>
+					</div>
+					<div id="verificationCodeGroup" class="form-group input-with-button" style="display: none;">
+						<input type="text" id="authCode" name="authCode" placeholder="인증번호 6자리" required>
+						<span id="timer" class="timer">03:00</span>
+						<button type="button" class="btn btn-secondary" id="verifyAuthCodeBtn">확인</button>
+					</div>
+					<button type="submit" class="btn btn-primary" id="authSearchBtn" disabled>조회하기</button>
+				</form>
+			</div>
+			<div id="tab-number" class="tab-content">
+				<form id="numberSearchForm">
+					<div class="form-group">
+						<label for="estimateNumber">견적번호</label>
+						<input type="text" id="estimateNumber" name="estimateNumber" placeholder="견적번호를 입력하세요" required>
+					</div>
+					<div class="form-group">
+						<label for="verifiedMethod">신청 시 인증수단</label>
+						<select id="verifiedMethod" name="verifiedMethod">
+							<option value="phone">휴대폰</option>
+							<option value="email">이메일</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="verifiedValue">신청 시 인증정보</label>
+						<input type="text" id="verifiedValue" name="verifiedValue" placeholder="신청 시 인증한 휴대폰 번호 또는 이메일"
+							required>
+					</div>
+					<button type="submit" class="btn btn-primary">조회하기</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div id="estimate-results-container"></div>
+</main>
+
+<th:block layout:fragment="script">
+
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
+
+	<script th:inline="javascript"> // 혹은 <script> 태그 안에서는 기본적으로 inline 모드가 동작
+		const fullEstimateList = /*[[${estimateList}]]*/null;
+	</script>
+	<script th:inline="javascript" type="module">
+		import {validate} from '/js/validate.js';
+		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
+		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
+		import {startCountdown, stopCountdown} from '/js/timer.js';
+		import {initAddressSearch} from '/js/address-api.js';
+		import {createImageHandler} from '/js/imageHandler.js';
+		import {signInAuthPhone, signInAuthEmail, signOutAuth} from '/js/sign.js';
+		import {openEditModal} from '/js/editModal.js';
+		import {getAllEstimateByAuth, getEstimateByAuth, getEstimateByGuest, updateEstimateByAuth, deleteEstimateByAuth} from '/js/estimate.js';
+
+
+		document.addEventListener('DOMContentLoaded', function () {
+			// --- 1. DOM 요소 가져오기 ---
+			const tabLinks = document.querySelectorAll('.tab-link');
+			const tabContents = document.querySelectorAll('.tab-content');
+
+			// 본인인증 탭
+			const authTypeSelect = document.getElementById('authType');
+			const authValueInput = document.getElementById('authValue');
+			const sendAuthCodeBtn = document.getElementById('sendAuthCodeBtn');
+			const verificationCodeGroup = document.getElementById('verificationCodeGroup');
+			const authCodeInput = document.getElementById('authCode');
+			const timerDisplay = document.getElementById('timer');
+			const verifyAuthCodeBtn = document.getElementById('verifyAuthCodeBtn');
+			const authSearchBtn = document.getElementById('authSearchBtn');
+
+			// 검색 결과 탭
+			let cachedEstimates = []; // 조회된 견적 데이터를 저장할 캐시
+			const searchContainer = document.querySelector('.search-container');
+			const searchFormWrapper = document.querySelector('.search-form-wrapper');
+			const searchTitle = document.querySelector('.search-title');
+			const resultsContainer = document.getElementById('estimate-results-container');
+
+			//토글
+			const toggleBtn = document.getElementById('toggle-search-btn');
+
+			// --- 2. 상태 관리 변수 ---
+			let isVerified = false;
+			const STATUS_LABEL = {
+				RECEIVE: '접수',
+				IN_PROGRESS: '처리중',
+				COMPLETE: '완료',
+				DELETE: '삭제'
+			};
+
+			// --- 3. 함수 정의 ---
+
+			// 본인인증 탭 상태를 초기화하는 함수
+			const resetVerification = () => {
+				isVerified = false;
+
+				// 타이머 정지
+				stopCountdown(timerDisplay);
+
+				// 입력 필드 및 버튼 활성화/초기화
+				authValueInput.disabled = false;
+				authValueInput.value = '';
+
+				sendAuthCodeBtn.disabled = false;
+				sendAuthCodeBtn.textContent = '인증번호 발송';
+
+				authCodeInput.value = '';
+				authCodeInput.disabled = false;
+				verifyAuthCodeBtn.disabled = false;
+
+				// 인증번호 입력칸 숨기기
+				verificationCodeGroup.style.display = 'none';
+
+				// 최종 조회 버튼 비활성화
+				authSearchBtn.disabled = true;
+			};
+
+			// 본인인증으로 조회
+			async function handleAuthSearch(e) {
+				e.preventDefault();
+				if (!isVerified) {
+					alert('본인인증을 먼저 완료해주세요.');
+					return;
+				}
+
+				const authType = authTypeSelect.value;
+				const authSearchBtn = document.getElementById('authSearchBtn');
+
+				authSearchBtn.disabled = true;
+				authSearchBtn.textContent = '토큰 발급 중...';
+
+				try {
+					// 1. 인증 토큰(JWT)을 먼저 발급받는다.
+					if (authType === 'phone') {
+						await signInAuthPhone();
+					} else {
+						await signInAuthEmail();
+					}
+
+					authSearchBtn.textContent = '견적 조회 중...';
+					showLoading(true);
+
+					// 2. 발급받은 토큰으로 견적 데이터를 조회한다.
+					const json = await getAllEstimateByAuth();
+					cachedEstimates = json.data;
+					showLoading(false);
+					resetVerification();
+					showEstimateList(cachedEstimates);
+					toggleSearchContainer(false); // 검색창 접기
+
+				} catch (error) {
+					showLoading(false);
+					alert(`조회에 실패했습니다: ${error.message}`);
+				} finally {
+					authSearchBtn.disabled = false;
+					authSearchBtn.textContent = '조회하기';
+				}
+			}
+
+			// 견적번호로 조회
+			async function handleNumberSearch(e) {
+				e.preventDefault();
+				const estimateId = document.getElementById('estimateNumber').value;
+				const value = document.getElementById('verifiedValue').value;
+
+				showLoading(true);
+				try {
+					const json = await getEstimateByGuest(estimateId, value);
+					cachedEstimates = [json.data]; // 단건이지만 배열로 저장
+					showLoading(false);
+					showEstimateDetail(json.data, false); // 바로 상세 보기
+					toggleSearchContainer(false); // 검색창 접기
+				} catch (error) {
+					showLoading(false);
+					alert(error.message);
+				}
+			}
+
+			// 로딩 스피너 표시/숨김
+			function showLoading(isLoading) {
+				resultsContainer.innerHTML = isLoading ? '<div class="loading-spinner"></div>' : '';
+			}
+
+			// 검색창 토글
+			function toggleSearchContainer(show) {
+				if (show) {
+					// 검색창을 펼칠 때
+					searchContainer.classList.remove('collapsed');
+					searchTitle.style.cursor = 'default'; // 펼쳐졌을 땐 제목 클릭 방지
+					searchFormWrapper.style.display = 'block'; // 먼저 보이게 처리
+
+					// 애니메이션을 위한 약간의 시간차
+					setTimeout(() => {
+						searchContainer.style.maxHeight = '1000px'; // 충분한 높이
+						searchFormWrapper.style.opacity = '1';
+						searchFormWrapper.style.visibility = 'visible';
+					}, 10);
+
+				} else {
+					// 검색창을 접을 때
+					searchContainer.classList.add('collapsed');
+					searchTitle.style.cursor = 'pointer'; // 접혔을 땐 제목으로도 펼칠 수 있게
+					searchContainer.style.maxHeight = '80px';
+					searchFormWrapper.style.opacity = '0';
+					searchFormWrapper.style.visibility = 'hidden';
+					searchFormWrapper.style.display = 'none';
+				}
+			}
+
+			// 견적 리스트 그리기
+			function showEstimateList(estimates) {
+				resultsContainer.innerHTML = ''; // 초기화
+				const estimateListRefreshDiv = document.createElement('div');
+				estimateListRefreshDiv.className = "estimate-list-btn-div";
+
+				const unAuthButton = document.createElement('button');
+				unAuthButton.className = 'btn btn-secondary';
+				unAuthButton.innerText = `인증 해제`;
+				unAuthButton.addEventListener('click', async (e) => {
+					e.preventDefault();
+					await signOutAuth();
+					window.location.reload();
+				});
+
+				const refreshButton = document.createElement('button');
+				refreshButton.className = 'estimate-list-refresh-btn btn btn-primary-mini';
+				refreshButton.innerText = `새로고침`;
+				refreshButton.addEventListener('click', async (e) => {
+					e.preventDefault();
+					showLoading(true);
+					const json = await getAllEstimateByAuth();
+					cachedEstimates = json.data;
+
+					showLoading(false);
+					resetVerification();
+
+					if (cachedEstimates.length === 0) {
+						resultsContainer.innerHTML = '<p style="text-align:center;">조회된 견적 내역이 없습니다.</p>';
+					} else {
+						showEstimateList(cachedEstimates);
+					}
+				});
+				estimateListRefreshDiv.appendChild(unAuthButton);
+				estimateListRefreshDiv.appendChild(refreshButton);
+				resultsContainer.appendChild(estimateListRefreshDiv);
+
+				estimates.forEach(est => {
+					const item = document.createElement('div');
+					item.className = 'estimate-list-item';
+					item.dataset.id = est.estimateId; // ID 저장
+					item.innerHTML = `
+									<div class="estimate-summary-info">
+										${createStatusBadge(est.estimateStatus)}
+										<span class="name"><b>${est.name}</b> 님</span>
+										<span class="service">${est.cleaningService}</span>
+									</div>
+									<div class="estimate-id">#${est.estimateId}</div>
+								`;
+					item.addEventListener('click', () => {
+						const clickedEstimate = cachedEstimates.find(e => e.estimateId == item.dataset.id);
+						showEstimateDetail(clickedEstimate, true); // 본인인증 조회의 경우 true
+					});
+					resultsContainer.appendChild(item);
+				});
+			}
+
+			// 견적 상세 보기 그리기
+			function showEstimateDetail(est, isFromAuthSearch) {
+				resultsContainer.innerHTML = ''; // 초기화
+				const detailView = document.createElement('div');
+				detailView.className = 'estimate-detail-view';
+
+				// 이미지 갤러리 HTML 생성
+				const imagesHtml = est.images && est.images.length > 0
+					? est.images.map(src => `<img src="${src}" alt="견적 이미지">`).join('')
+					: '<span>첨부된 이미지가 없습니다.</span>';
+
+				detailView.innerHTML = `
+								<div class="detail-header">
+						            ${createStatusBadge(est.estimateStatus)}
+						            <span class="estimate-id">견적서 상세내용 (#${est.estimateId})</span>
+						            ${isFromAuthSearch ? `<button type="button" class="btn btn-secondary" id="back-to-list-btn">목록으로</button>` : '<div></div>'}
+						        </div>
+								<div class="detail-section">
+									<h4>기본 정보</h4>
+									<div class="detail-info">
+										<b>- 이름:</b> ${est.name}<br>
+										<b>- 연락처:</b> ${est.phone ? est.phone : ''}<br>
+										<b>- 이메일:</b> ${est.email ? est.email : ''}<br>
+										<b>- 서비스:</b> ${est.cleaningService}
+									</div>
+								</div>
+								<div class="detail-section">
+									<h4>주소</h4>
+									<div class="detail-info">
+										(${est.postcode}) ${est.mainAddress}<br>${est.detailAddress}
+									</div>
+								</div>
+								<div class="detail-section">
+									<h4>상세 내용</h4>
+									<div class="detail-content">${est.content || '입력된 내용이 없습니다.'}</div>
+								</div>
+								<div class="detail-section">
+									<h4>첨부 이미지</h4>
+									<div class="detail-images">${imagesHtml}</div>
+								</div>
+								<div class="detail-actions">
+									<button type="button" class="btn btn-secondary btn-edit" ${!isFromAuthSearch ? 'disabled' : ''}>수정</button>
+									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
+									<button type="button" class="btn btn-danger btn-delete" ${!isFromAuthSearch ? 'disabled' : ''}>삭제</button>
+									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
+								</div>
+							`;
+
+				const backToListBtn = detailView.querySelector('#back-to-list-btn');
+				if (backToListBtn) {
+					backToListBtn.addEventListener('click', () => {
+						showEstimateList(cachedEstimates);
+					});
+				}
+
+				// 이벤트 리스너 연결
+				detailView.querySelector('.btn-edit').addEventListener('click', () => {
+					// 이미 est 객체가 있으므로 다시 찾을 필요 없이 바로 사용!
+					openEditModal(est, {
+						updateApiFunction: updateEstimateByAuth,
+						onSaveSuccess: (updatedEstimate) => {
+							// 캐시 업데이트 및 리스트 다시 그리기
+							cachedEstimates = cachedEstimates.map(item =>
+								item.estimateId === updatedEstimate.estimateId ? updatedEstimate : item
+							);
+							// 수정 후에는 상세 보기 화면을 다시 그려주는 것이 더 좋은 경험
+							showEstimateDetail(updatedEstimate, isFromAuthSearch);
+						}
+					});
+				});
+				detailView.querySelector('.btn-delete').addEventListener('click', (e) => {
+					e.preventDefault();
+					handleDelete(est.estimateId);
+				});
+
+				resultsContainer.appendChild(detailView);
+			}
+
+			// 삭제 처리
+			async function handleDelete(estimateId) {
+				if (confirm('정말로 이 견적서를 삭제하시겠습니까?')) {
+					try {
+						await deleteEstimateByAuth(estimateId);
+						alert('삭제되었습니다.');
+						// 리스트 재조회
+						showLoading(true);
+						const json = await getAllEstimateByAuth();
+						cachedEstimates = json.data;
+						showLoading(false);
+						showEstimateList(cachedEstimates);
+					} catch (error) {
+						alert(error.message);
+					}
+				}
+			}
+
+			// 상태 뱃지 생성
+			function createStatusBadge(status) {
+				const label = STATUS_LABEL[status] ?? '알수없음';
+
+				return `<span class="estimate-status-badge status-${status}"> ${label}</span>`;
+			}
+
+			// --- 4. 이벤트 리스너 등록 ---
+
+			// "조회하기" 버튼 클릭 (인증 후)
+			document.getElementById('authSearchForm').addEventListener('submit', handleAuthSearch);
+			document.getElementById('numberSearchForm').addEventListener('submit', handleNumberSearch);
+			// 토글 버튼 클릭 이벤트
+			toggleBtn.addEventListener('click', () => {
+				const isCollapsed = searchContainer.classList.contains('collapsed');
+				toggleSearchContainer(isCollapsed);
+			});
+
+			// (사용자 편의성) 접혔을 때 제목을 클릭해도 펼쳐지게 함
+			searchTitle.addEventListener('click', () => {
+				if (searchContainer.classList.contains('collapsed')) {
+					toggleSearchContainer(true);
+				}
+			});
+
+			// 탭 전환 이벤트
+			tabLinks.forEach(link => {
+				link.addEventListener('click', () => {
+					const tabId = link.getAttribute('data-tab');
+					tabLinks.forEach(item => item.classList.remove('active'));
+					tabContents.forEach(item => item.classList.remove('active'));
+					link.classList.add('active');
+					document.getElementById(tabId).classList.add('active');
+					if (tabId === 'tab-auth') {
+						resetVerification(); // 본인인증 탭으로 올 때마다 초기화
+					}
+				});
+			});
+
+			// 인증수단 변경 이벤트 (휴대폰/이메일)
+			authTypeSelect.addEventListener('change', (e) => {
+				authValueInput.placeholder = e.target.value === 'phone' ? '휴대폰 번호 입력' : '이메일 주소 입력';
+				resetVerification();
+			});
+
+			// "인증번호 발송" 버튼 클릭 이벤트
+			sendAuthCodeBtn.addEventListener('click', async () => {
+				const authType = authTypeSelect.value;
+				const authValue = authValueInput.value;
+
+				sendAuthCodeBtn.disabled = true;
+				sendAuthCodeBtn.textContent = '전송 중...';
+
+				try {
+					// 2. authType에 따라 import된 함수를 호출하도록 수정
+					if (authType === 'phone') {
+						await sendSms(authValue);
+					} else {
+						await sendEmail(authValue);
+					}
+
+					alert('인증번호가 발송되었습니다.');
+					authValueInput.disabled = true;
+					sendAuthCodeBtn.textContent = '재전송';
+					verificationCodeGroup.style.display = 'flex';
+					startCountdown(180, timerDisplay);
+
+				} catch (error) {
+					sendAuthCodeBtn.textContent = '인증번호 발송';
+					alert(error.message);
+				} finally {
+					sendAuthCodeBtn.disabled = false;
+				}
+			});
+
+			// "인증번호 확인" 버튼 클릭 이벤트
+			verifyAuthCodeBtn.addEventListener('click', async () => {
+				const authType = authTypeSelect.value;
+				const authValue = authValueInput.value;
+				const authCode = authCodeInput.value;
+
+				verifyAuthCodeBtn.disabled = true;
+
+				try {
+					// 3. authType에 따라 import된 함수를 호출하도록 수정
+					if (authType === 'phone') {
+						await verifySmsCode(authValue, authCode);
+					} else {
+						await verifyMailCode(authValue, authCode);
+					}
+
+					alert('인증에 성공했습니다.');
+					isVerified = true;
+					stopCountdown(timerDisplay);
+
+					sendAuthCodeBtn.disabled = true;
+					authCodeInput.disabled = true;
+					verifyAuthCodeBtn.disabled = true;
+					authSearchBtn.disabled = false;
+
+				} catch (error) {
+					alert(error.message);
+				} finally {
+					if (!isVerified) {
+						verifyAuthCodeBtn.disabled = false;
+					}
+				}
+			});
+
+			// 페이지 로드 시 초기화
+			resetVerification();
+
+			// auth토큰이 쿠키에 남아있는 경우 페이지 로드
+			if (fullEstimateList) {
+				cachedEstimates = fullEstimateList;
+				toggleSearchContainer(false);
+				showEstimateList(fullEstimateList);
+			}
+
+		});
+
+	</script>
+
+</th:block>
+
+</html>

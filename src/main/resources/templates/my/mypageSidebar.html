@@ -1,0 +1,99 @@
+<th:block th:fragment="sidebarStyles">
+	<style type="text/css">
+		.container{
+			    display: flex;
+			    justify-content: center;
+		}
+		.content {
+			flex-grow: 1;
+			min-width: 713px;
+			max-width: 989px;
+			padding: 0px 40px;
+		}
+		.contentTitle {
+			margin-top: 0px;
+			padding-bottom: 15px;
+			border-bottom: 4px solid #20367a;
+			margin-bottom: 30px;
+		}
+		
+		.sidebarDiv {
+			border-right: 2px solid #efefef;
+			flex-shrink: 0;
+			/* 사이드바 너비가 줄어들지 않도록 고정 */
+		}
+
+		.sidebar {
+			min-width: 120px;
+			padding-left: 20px;
+			margin: 0;
+		}
+
+		.sidebar ul {
+			list-style-type: none;
+			padding: 0;
+			margin: 0;
+		}
+
+		.sidebar a {
+			text-decoration: none;
+			color: black;
+		}
+
+		.sidebar li a:not(.headerFont) {
+			color: #afafaf;
+		}
+
+		.category-title {
+			padding-bottom: 20px;
+		}
+
+		.category-title li {
+			padding-bottom: 10px;
+		}
+
+		.headerFont {
+			margin: 0px;
+			font-size: 24px;
+		}
+
+		.subHeaderFont {
+			margin: 0px;
+			font-size: 20px;
+		}
+	</style>
+</th:block>
+
+<th:block th:fragment="sidebarScripts">
+	<script type="text/javascript">
+		const currentUrl = window.location.pathname;
+
+		// 현재 URL과 일치하는 사이드바 메뉴를 활성화(색상 변경)하는 스크립트
+		document.querySelectorAll('.sidebar li a').forEach(function (link) {
+			const linkPath = new URL(link.href).pathname;
+
+			if (currentUrl.startsWith(linkPath)) {
+				link.style.color = 'black';
+			}
+		});
+	</script>
+</th:block>
+
+<th:block th:fragment="sidebarFragment">
+	<div class="sidebarDiv">
+		<nav class="sidebar">
+			<ul>
+				<li style="margin-bottom:18px;"><a class="headerFont" href="/my">마이페이지</a></li>
+				<li><a href="/my/estimate">견적 내역</a></li>
+				<li class="category-title">
+					<h3>내정보</h3>
+					<ul class="sidebar2">
+						<li><a href="/my/signInfo">로그인 정보</a></li>
+						<li><a href="/my/profile">프로필 관리</a></li>
+						<li><a href="/my/addressBook">주소록</a></li>
+					</ul>
+				</li>
+			</ul>
+		</nav>
+	</div>
+</th:block>

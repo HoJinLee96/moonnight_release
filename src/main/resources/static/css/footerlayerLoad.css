@@ -1,0 +1,29 @@
+.overlay {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     background-color: rgba(0, 0, 0, 0.5);
+     display: none;
+     justify-content: center;
+     align-items: center;
+     z-index: 1000;
+}
+ .content {
+ width:800px;
+ height:650px;
+     background-color: white;
+     padding: 20px;
+     border-radius: 10px;
+     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+     margin:0px auto;
+     margin-top:150px;
+     position: relative;
+ }
+ .close-btn {
+ float: right;
+ display:inline;
+ margin-bottom:10px;
+     cursor: pointer;
+ }

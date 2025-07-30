@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>주소록</title>
+	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<style type="text/css">
+		/* --- 기본 & 공통 스타일 --- */
+		p {
+			margin: 0;
+		}
+
+		.content {
+		    flex-grow: 1;
+		    min-width: 713px;
+		    max-width: 989px;
+		    padding: 0px 40px;
+		}
+
+		.contentTitle {
+			padding-bottom: 15px;
+			border-bottom: 4px solid #20367a;
+			margin-bottom: 20px;
+			/* 목록과의 간격 추가 */
+		}
+
+		/* --- 주소 목록 스타일 --- */
+		.address {
+			display: flex;
+		}
+
+		.address {
+			/* 목록을 감싸는 부모 추가를 권장 */
+			display: flex;
+			justify-content: space-between;
+			/* 양쪽 끝으로 정렬 */
+			align-items: center;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 20px;
+			margin-top: 15px;
+			gap: 20px;
+			/* 컨텐츠와 버튼 사이 간격 */
+		}
+
+		.address-info {
+			/* width 대신 flex-grow를 사용해 가변 너비 처리 */
+			flex-grow: 1;
+			min-width: 0;
+			/* flex item의 너비가 줄어들 수 있도록 설정 */
+		}
+
+		.address-info .nickname {
+			font-weight: bold;
+			font-size: 1.1rem;
+			margin-bottom: 8px;
+		}
+
+		.address-info .full-address {
+			color: #666;
+			/* 긴 주소가 넘칠 경우 ... 으로 표시 */
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.address-actions {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			flex-shrink: 0;
+			/* 버튼 영역이 줄어들지 않도록 설정 */
+		}
+
+		/* --- '주소 추가' 버튼 스타일 --- */
+		.add-address-btn {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border: 2px dotted #ccc;
+			border-radius: 8px;
+			padding: 20px;
+			margin-top: 15px;
+			height: 60px;
+			cursor: pointer;
+			font-size: 1.5rem;
+			color: #aaa;
+			transition: all 0.2s ease-in-out;
+		}
+
+		.add-address-btn:hover {
+			background-color: #f8f9fa;
+			color: #20367a;
+			border-color: #20367a;
+		}
+
+		/* --- 모달(팝업) 스타일 --- */
+		.overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			/* display: none; <- JS로 제어 */
+			/* Flexbox로 내용물을 완벽하게 중앙 정렬 */
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.modal-content {
+			width: 90%;
+			/* 모바일 화면을 위해 % 사용 */
+			max-width: 500px;
+			/* PC 화면 최대 너비 */
+			background-color: white;
+			padding: 30px 40px;
+			border-radius: 10px;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+			position: relative;
+			/* 고정 높이 대신 내용에 따라 높이가 늘어나도록 auto 설정 */
+			height: auto;
+		}
+
+		.modal-content .close-btn {
+			position: absolute;
+			top: 15px;
+			right: 20px;
+			font-size: 2rem;
+			font-weight: bold;
+			color: #aaa;
+			cursor: pointer;
+			transition: color 0.2s;
+		}
+
+		.modal-content .close-btn:hover {
+			color: #333;
+		}
+
+		.modal-content h3 {
+			margin-top: 0;
+			margin-bottom: 30px;
+			text-align: center;
+		}
+
+		/* --- 모달 내부 폼 스타일 --- */
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: bold;
+		}
+
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 16px;
+			box-sizing: border-box;
+			/* padding을 포함하여 너비 계산 */
+			transition: border-color 0.3s;
+		}
+
+		.form-input:focus {
+			outline: none;
+			border-color: #20367a;
+		}
+
+		.form-input[readonly] {
+			background-color: #f8f9fa;
+			cursor: pointer;
+		}
+
+		.postcode-wrapper {
+			display: flex;
+			gap: 10px;
+		}
+
+		/* --- 공통 버튼 스타일 --- */
+		.btn {
+			display: inline-flex;
+			justify-content: center;
+			align-items: center;
+			padding: 8px 15px;
+			border-radius: 5px;
+			font-weight: bold;
+			cursor: pointer;
+			text-decoration: none;
+			transition: all 0.2s;
+		}
+		/* --- 피드백 말풍선(Tooltip) 스타일 --- */
+		.feedback-tooltip {
+			position: absolute;
+			/* 다른 요소에 영향을 주지 않고 위치를 잡기 위해 */
+			padding: 10px 15px;
+			background-color: #333;
+			/* 어두운 배경 */
+			color: white;
+			/* 흰색 글씨 */
+			border-radius: 6px;
+			font-size: 14px;
+			z-index: 1001;
+			/* 모달보다는 위에, 다른 요소들보다도 위에 */
+
+			/* 기본 상태는 숨김 */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(10px);
+			/* 살짝 아래에서 시작 */
+
+			/* 부드러운 전환 효과 */
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+		}
+
+		/* 말풍선을 보여줄 때 적용할 클래스 */
+		.feedback-tooltip.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+			/* 원래 위치로 */
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="container">
+		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
+		<div class="content">
+			<h2 class="contentTitle">주소록</h2>
+
+			<div th:if="${#lists.isEmpty(addressList)}">
+				<p>등록된 주소가 없습니다.</p>
+			</div>
+
+			<div th:unless="${#lists.isEmpty(addressList)}" th:each="addr : ${addressList}" class="address">
+
+				<div class="address-info">
+					<p class="nickname" th:text="${addr.name} ?: '별칭 없음'"></p>
+					<p class="full-address"
+						th:text="'(' + ${addr.postcode} + ') ' + ${addr.mainAddress} + ' ' + ${addr.detailAddress}"></p>
+				</div>
+
+				<div class="address-actions">
+					<button th:unless="${addr.isPrimary}" type="button" class="btn btn-outline choice-btn"
+						th:data-address-id="${addr.addressId}">대표</button>
+
+					<button type="button" class="btn btn-outline update-btn" th:data-address-id="${addr.addressId}"
+						th:data-name="${addr.name}" th:data-postcode="${addr.postcode}"
+						th:data-main-address="${addr.mainAddress}"
+						th:data-detail-address="${addr.detailAddress}">수정</button>
+
+					<button th:unless="${addr.isPrimary}" type="button" class="btn btn-outline delete-btn"
+						th:data-address-id="${addr.addressId}">삭제</button>
+				</div>
+			</div>
+
+			<div th:if="${addressList == null or #lists.size(addressList) < 5}" class="add-address-btn"
+				id="addAddressBtn">
+				+
+			</div>
+		</div>
+	</div>
+</main>
+<th:block layout:fragment="script">
+
+	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+	<script type="module" th:inline="javascript">
+		import {registerAddress, updateAddress, updatePrimary, deleteAddress} from '/js/address.js';
+		import {initAddressSearch} from '/js/address-api.js';
+
+		document.addEventListener("DOMContentLoaded", () => {
+			const contentDiv = document.querySelector('.content');
+
+			// 이벤트 위임을 사용하여 content 영역의 클릭을 한 번에 처리
+			contentDiv.addEventListener('click', (e) => {
+				// 가장 가까운 버튼 요소를 찾음
+				const targetButton = e.target.closest('button');
+
+				// '주소 추가' div 클릭 처리
+				if (e.target.closest('#addAddressBtn')) {
+					showAddressModal(null);
+					return;
+				}
+
+				// 버튼이 아니면 아무것도 안 함
+				if (!targetButton) return;
+
+				const addressId = targetButton.dataset.addressId;
+
+				if (targetButton.classList.contains('choice-btn')) {
+					if (confirm("이 주소를 대표 주소지로 설정하시겠습니까?")) {
+						handleSetPrimary(addressId);
+					}
+				} else if (targetButton.classList.contains('update-btn')) {
+					const addressData = {...targetButton.dataset}; // dataset을 객체로 복사
+					showAddressModal(addressData);
+				} else if (targetButton.classList.contains('delete-btn')) {
+					if (confirm("정말로 이 주소를 삭제하시겠습니까?")) {
+						handleDelete(addressId);
+					}
+				}
+			});
+		});
+
+		async function handleSetPrimary(addressId) {
+
+			try {
+				await updatePrimary(addressId);
+				window.location.reload();
+			} catch (error) {
+				alert(error.message);
+				window.location.reload();
+			}
+
+		}
+
+		async function handleDelete(addressId) {
+			try {
+				await deleteAddress(addressId);
+				window.location.reload();
+			} catch (error) {
+				alert(error.message);
+				window.location.reload();
+			}
+		}
+
+
+		/**
+		 * 모달을 생성하고 표시하는 함수 (리팩토링된 버전)
+		 * @param {object | null} addressData - 수정할 주소 데이터. null이면 새 주소 추가 모드.
+		 */
+		function showAddressModal(addressData) {
+			const isUpdate = addressData != null;
+			const title = isUpdate ? "주소 수정" : "새 주소 추가";
+
+			// --- 1. 템플릿 리터럴로 모달의 전체 HTML 구조를 만듦 ---
+			const modalHtml = `
+		        <div class="overlay">
+		            <div class="modal-content">
+		                <span class="close-btn">&times;</span>
+		                <h3>${title}</h3>
+		                
+		                <div class="form-container">
+		                    <div class="form-group">
+		                        <label class="form-label" for="modal_name">이름 (별칭)</label>
+		                        <input type="text" id="modal_name" class="form-input" placeholder="받는 분 이름 또는 별칭" 
+		                               maxlength="20" value="${isUpdate ? addressData.name : ''}">
+		                    </div>
+		                    
+		                    <div class="form-group">
+		                        <label class="form-label">주소</label>
+		                        <div class="postcode-wrapper">
+		                            <input type="text" id="modal_postcode" class="form-input" placeholder="우편번호" 
+		                                   readonly value="${isUpdate ? addressData.postcode : ''}">
+		                            <button type="button" class="btn btn-primary-mini" id="searchAddressBtn">주소 검색</button>
+		                        </div>
+		                    </div>
+
+		                    <div class="form-group">
+		                         <input type="text" id="modal_mainAddress" class="form-input" placeholder="주소" 
+		                                readonly value="${isUpdate ? addressData.mainAddress : ''}">
+		                    </div>
+		                    
+		                    <div class="form-group">
+		                        <input type="text" id="modal_detailAddress" class="form-input" placeholder="상세주소" 
+		                               maxlength="50" value="${isUpdate ? addressData.detailAddress : ''}">
+		                    </div>
+		                    
+		                    <button type="button" class="btn btn-primary" id="submitBtn" style="width: 100%; height: 50px;">저장</button>
+		                </div>
+		            </div>
+		        </div>
+		    `;
+
+			// --- 2. 생성된 HTML을 body에 추가 ---
+			document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+			// --- 3. 방금 생성된 모달의 요소들을 선택하고 이벤트 핸들러 등록 ---
+			const overlay = document.querySelector('.overlay');
+			const closeModal = () => overlay.remove(); // 오버레이 자체를 삭제
+
+			overlay.querySelector('.close-btn').addEventListener('click', closeModal);
+			overlay.addEventListener('click', (e) => {
+				if (e.target === overlay) closeModal(); // 배경 클릭 시 닫기
+			});
+
+			initAddressSearch({
+				triggerBtnId: 'searchAddressBtn',
+				postcodeId: 'modal_postcode',
+				mainAddressId: 'modal_mainAddress',
+				detailAddressId: 'modal_detailAddress'
+			});
+
+			// 저장 버튼 클릭 이벤트
+			overlay.querySelector('#submitBtn').addEventListener('click', async () => {
+				const dataToSend = {
+					name: overlay.querySelector('#modal_name').value,
+					postcode: overlay.querySelector('#modal_postcode').value,
+					mainAddress: overlay.querySelector('#modal_mainAddress').value,
+					detailAddress: overlay.querySelector('#modal_detailAddress').value,
+				};
+
+				if (!dataToSend.name.trim() || !dataToSend.postcode.trim() || !dataToSend.mainAddress.trim()) {
+					alert('이름과 주소를 모두 입력해주세요.');
+					return;
+				}
+
+				try {
+					const successCallback = (json) => {
+						alert(isUpdate ? '주소가 성공적으로 수정되었습니다.' : '새 주소가 등록되었습니다.');
+						closeModal();
+						location.reload();
+					};
+					const errorCallback = (error) => {
+						alert(error.message);
+						console.error(`주소 ${isUpdate ? '수정' : '등록'} 실패 (API). code: `, error.code);
+					};
+
+					if (isUpdate) {
+						await updateAddress(addressData.addressId, dataToSend, successCallback, errorCallback);
+						window.location.reload();
+					} else {
+						await registerAddress(dataToSend, successCallback, errorCallback);
+						window.location.reload();
+					}
+				} catch (error) {
+					alert(error.message || '오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+				}
+			});
+		}
+	</script>
+</th:block>
+
+</html>

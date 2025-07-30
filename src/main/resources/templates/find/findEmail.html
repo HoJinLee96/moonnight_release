@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>이메일 찾기</title>
+	<style type="text/css">
+		/* --- 전체 폼 레이아웃 --- */
+		.form-wrapper {
+			display: flex;
+			justify-content: center;
+			padding: 70px 0;
+		}
+
+		.form-container {
+			width: 100%;
+			max-width: 500px;
+			padding: 40px;
+			background-color: #fff;
+			border: 1px solid #efefef;
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		}
+
+		.form-container h2 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+		.form-description {
+			text-align: center;
+			font-size: 15px;
+			color: #666;
+			margin-bottom: 40px;
+			line-height: 1.6;
+		}
+
+		/* --- 범용 폼 & 버튼 스타일 --- */
+		.form-group {
+			margin-bottom: 25px;
+		}
+
+		.form-label {
+			display: block;
+			margin-bottom: 8px;
+			font-size: 15px;
+			font-weight: bold;
+		}
+
+		.form-input {
+			width: 100%;
+			height: 45px;
+			padding: 0 12px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 16px;
+			box-sizing: border-box;
+		}
+
+		.btn {
+			height: 45px;
+			padding: 0 20px;
+			border: none;
+			border-radius: 5px;
+			font-size: 15px;
+			font-weight: bold;
+			cursor: pointer;
+			flex-shrink: 0;
+			text-decoration: none;
+			display: inline-flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		/* --- 페이지 맞춤 레이아웃 --- */
+		.input-with-button {
+			display: flex;
+			gap: 10px;
+		}
+
+		.input-with-icon {
+			position: relative;
+			width: 100%;
+		}
+
+		.timer {
+			width: 35px;
+			position: absolute;
+			right: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: red;
+			font-weight: bold;
+			font-size: 14px;
+		}
+
+		.feedback-message {
+			display: block;
+			height: 14px;
+			margin-top: 5px;
+			font-size: 14px;
+		}
+
+		/* --- 결과 표시 화면 스타일 --- */
+		.result-container {
+			animation: fadeIn 0.5s;
+		}
+
+		.email-display-box {
+			background-color: #f8f9fa;
+			padding: 20px;
+			border-radius: 8px;
+			text-align: center;
+			font-size: 1.1rem;
+			font-weight: bold;
+			margin-bottom: 30px;
+		}
+
+		.form-actions {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			margin-top: 40px;
+			padding-top: 20px;
+			border-top: 1px solid #eee;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+			}
+
+			to {
+				opacity: 1;
+			}
+		}
+	</style>
+</head>
+<main layout:fragment="content">
+	<div class="form-wrapper">
+		<form id="findEmailForm" class="form-container">
+			<div id="auth-step">
+				<h2>이메일 찾기</h2>
+				<p class="form-description">회원가입 시 인증한 휴대폰 번호를 입력해주세요.</p>
+
+				<div class="form-group">
+					<label for="phone" class="form-label">휴대폰 번호</label>
+					<div class="input-with-button">
+						<input type="text" id="phone" class="form-input" required maxlength="13">
+						<button type="button" class="btn btn-primary-mini" id="sendSmsButton">인증번호 발송</button>
+					</div>
+					<span id="phoneMessage" class="feedback-message"></span>
+				</div>
+
+				<div id="verification-group" class="form-group" style="display: none;">
+					<label for="verificationCode" class="form-label">인증번호</label>
+					<div class="input-with-button">
+						<div class="input-with-icon">
+							<input type="text" id="verificationCode" class="form-input" required maxlength="6" disabled>
+							<span id="timer" class="timer">03:00</span>
+						</div>
+						<button type="button" class="btn btn-primary-mini" id="verifySmsCodeButton" disabled>이메일 찾기</button>
+					</div>
+					<span id="verificationMessage" class="feedback-message"></span>
+				</div>
+			</div>
+
+			<div id="result-success" class="result-container" style="display: none;">
+				<h2>이메일 찾기 완료</h2>
+				<p class="form-description">회원님의 계정을 찾았습니다.</p>
+				<div class="email-display-box">
+					<span id="foundEmail"></span>
+				</div>
+				<div class="form-actions">
+					<a href="/find/password" class="btn btn-secondary" id="findPasswordButton">비밀번호 찾기</a> <a
+						href="/signin" class="btn btn-primary-mini">로그인</a>
+				</div>
+			</div>
+
+			<div id="result-not-found" class="result-container" style="display: none;">
+				<h2>계정 정보 없음</h2>
+				<p class="form-description">입력하신 정보와 일치하는 계정을 찾을 수 없습니다.</p>
+				<div class="form-actions">
+					<a href="/find/email" class="btn btn-secondary">돌아가기</a>
+					<a href="/signup1" class="btn btn-primary-mini">회원가입</a>
+				</div>
+			</div>
+		</form>
+	</div>
+</main>
+<th:block layout:fragment="script">
+	<script th:inline="javascript" type="module">
+		import {validate} from '/js/validate.js';
+		import {initPhoneFormatting, initVerificationCodeFormatting, formatUserStatus, formatDate1} from '/js/format.js';
+		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
+		import {isEmailExistForFindEmail} from '/js/user.js';
+		import {startCountdown, stopCountdown} from '/js/timer.js';
+
+		document.addEventListener("DOMContentLoaded", () => {
+			// --- DOM 요소 ---
+			const authStep = document.getElementById('auth-step');
+			const resultSuccess = document.getElementById('result-success');
+			const resultNotFound = document.getElementById('result-not-found');
+
+			const phoneInput = document.getElementById("phone");
+			const sendSmsButton = document.getElementById("sendSmsButton");
+			const phoneMessage = document.getElementById("phoneMessage");
+
+			const verificationGroup = document.getElementById('verification-group');
+			const verificationCodeInput = document.getElementById("verificationCode");
+			const timerDisplay = document.getElementById("timer");
+			const verifySmsCodeButton = document.getElementById("verifySmsCodeButton");
+			const verificationMessage = document.getElementById("verificationMessage");
+
+
+			// --- 이벤트 리스너 ---
+			sendSmsButton.addEventListener("click", async () => {
+				sendSmsButton.disabled = true;
+				phoneMessage.textContent = '';
+				try {
+					const phone = phoneInput.value;
+					validate('phone', phone);
+					await sendSms(phone); // 이메일 찾기용 SMS 발송 API
+
+					alert('인증번호가 발송되었습니다.');
+					phoneInput.readOnly = true;
+					verificationGroup.style.display = 'block';
+					verificationCodeInput.disabled = false;
+					verifySmsCodeButton.disabled = false;
+					startCountdown(180, timerDisplay, () => {
+						verifySmsCodeButton.disabled = true;
+					});
+				} catch (error) {
+					phoneMessage.style.color = 'red';
+					phoneMessage.textContent = error.message;
+				} finally {
+					sendSmsButton.disabled = false;
+				}
+			});
+
+			verifySmsCodeButton.addEventListener('click', async () => {
+				verifySmsCodeButton.disabled = true;
+				verificationMessage.textContent = '';
+				try {
+					const phone = phoneInput.value;
+					const code = verificationCodeInput.value;
+					validate('code', code);
+
+					await verifySmsCode(phone, code);
+					const json = await isEmailExistForFindEmail(phone);
+					const data = json.data;
+					stopCountdown(timerDisplay);
+
+					if (data) {
+						const displayBox = document.querySelector('.email-display-box');
+						const findPasswordButton = document.getElementById('findPasswordButton');
+
+						displayBox.innerHTML = ''; // 이전 내용 모두 삭제
+						displayBox.style.textAlign = 'left';
+						displayBox.style.padding = '20px 30px';
+
+						// 1. userProvider 값에 따라 완전히 다른 정보를 보여줌
+						if (data.userProvider === 'LOCAL') {
+							// [LOCAL 회원일 경우]
+							displayBox.innerHTML = `
+			                    <ul style="list-style-type: none; padding: 0; margin: 0; line-height: 2;">
+			                        <li><strong>통합 회원 이메일:</strong> ${data.email}</li>
+			                    </ul>
+			                `;
+							findPasswordButton.style.display = 'inline-flex';
+
+						} else if (data.userProvider === 'OAUTH') {
+							// [OAUTH 회원일 경우]
+							let oauthListHtml = data.oauthResponseDtoList.map(oauth =>
+								`<li><strong>소셜 계정:</strong> ${oauth.oauthProvider}</li>`
+							).join('');
+
+							displayBox.innerHTML = `
+			                    <ul style="list-style-type: none; padding: 0; margin: 0; line-height: 2;">
+			                        ${oauthListHtml}
+			                    </ul>
+			                `;
+							findPasswordButton.style.display = 'none';
+
+						}
+
+						// 2. 계정 상태와 가입일은 공통으로 추가 (정보가 있을 경우에만)
+						const commonInfoHtml = `
+			                <ul style="list-style-type: none; padding: 0; margin: 0; line-height: 2; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+			                    <li><strong>계정 상태:</strong> ${formatUserStatus(data.userStatus)}</li>
+			                    <li><strong>가입일:</strong> ${formatDate1(data.createdAt)}</li>
+			                </ul>
+			            `;
+						displayBox.innerHTML += commonInfoHtml;
+
+						authStep.style.display = 'none';
+						resultSuccess.style.display = 'block';
+
+					} else {
+						authStep.style.display = 'none';
+						resultNotFound.style.display = 'block';
+					}
+				} catch (error) {
+					if (error.code === "4530") {
+					    // 2. '사용자 없음' 화면으로 전환
+					    authStep.style.display = 'none';
+					    resultNotFound.style.display = 'block';
+					} else {
+					    // 3. 그 외 다른 에러는 기존 방식대로 span에 메시지 표시
+					    verificationMessage.style.color = 'red';
+					    verificationMessage.innerText = error.message;
+						alert(error.message);
+					}
+					
+				} finally {
+					verifySmsCodeButton.disabled = false;
+				}
+			});
+
+
+			// --- 포맷팅 초기화 ---
+			initPhoneFormatting(phoneInput);
+			initVerificationCodeFormatting(verificationCodeInput);
+		});
+	</script>
+</th:block>
+
+</html>

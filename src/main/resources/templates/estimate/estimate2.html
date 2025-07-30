@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>청소 견적 문의</title>
+	<style type="text/css">
+		.container {
+			width: 1350px;
+			margin: 0 auto;
+			padding: 50px;
+		}
+
+		.container h1 {
+			border-bottom: 4px solid #20367a;
+			padding-bottom: 15px;
+			margin-bottom: 20px;
+		}
+
+		#estimate {
+			display: flex;
+		}
+
+		#rightDiv {
+			margin-right: 20px;
+		}
+
+		h1 {
+			margin-top: 0px;
+			margin-bottom: 10px;
+		}
+
+		table {}
+
+		.tableHeader {
+			height: 30px;
+		}
+
+		#phone,
+		#name {
+			width: 90% !important;
+		}
+
+		#formContainer input[type="text"],
+		#formContainer input[type="email"] {
+			border: 1.5px solid #efefef;
+			width: 100%;
+			height: 30px;
+			border-radius: 5px;
+			padding-left: 10px;
+			outline: none;
+		}
+
+		#formContainer input:focus {
+			border: 1.5px solid black;
+			transition: border-color 0.3s;
+		}
+
+		#postcode {
+			width: 100px !important;
+		}
+
+		#content {
+			border: 1.5px solid #efefef;
+			width: 100%;
+			height: 400px;
+			border-radius: 5px;
+			padding-left: 10px;
+			padding-top: 10px;
+			resize: none;
+			outline: none;
+		}
+
+		#content:focus {
+			border-color: black;
+			transition: border-color 0.3s;
+		}
+
+		#submitButton {
+			width: 120px;
+			height: 50px;
+			font-size: 18px;
+			border: none;
+			background-color: #20367a;
+			color: white;
+			border-radius: 5px;
+		}
+
+		#submitButton:hover {
+			cursor: pointer;
+			border: 1px solid #20367a;
+			padding-left: 10px;
+			background-color: white;
+			color: #20367a;
+		}
+
+		.buttonDiv {
+			text-align: right;
+			width: 730px;
+			margin-top: 80px;
+		}
+
+		#agreeMentDiv {
+			margin-bottom: 15px;
+			position: relative;
+		}
+
+		#agreementClick {
+			text-decoration: none;
+			color: black;
+		}
+
+		#agreement:hover {
+			cursor: pointer;
+			position: relative;
+			top: 1px;
+		}
+
+		label[for="agreement"] {
+			cursor: pointer;
+		}
+
+		#agreementMessage {
+			position: absolute;
+			right: 0px;
+			top: -40px;
+		}
+	</style>
+
+	<!-- 이미지 업로드 -->
+	<style type="text/css">
+		#preview {
+			display: flex;
+			flex-wrap: wrap;
+			width: 720px;
+			height: 290px;
+			border: 1px solid #efefef;
+			border-radius: 5px;
+			margin-top: 15px;
+			gap: 5px;
+		}
+
+		.image-preview {
+			position: relative;
+		}
+
+		.image-preview img {
+			border-radius: 20px;
+		}
+
+		.image-preview button {
+			position: absolute;
+			right: 0px;
+			top: 0px;
+			border: none;
+			background: none;
+			font-size: 25px;
+			color: white;
+		}
+
+		.image-preview button:hover {
+			cursor: pointer;
+			color: #c4c4c4;
+		}
+
+		#dal6 {
+			width: 730px;
+			height: 280px;
+			margin-top: 50px;
+		}
+
+		.custom-image-label {
+			display: inline-block;
+			padding: 5px 10px;
+			background-color: #20367a;
+			color: white;
+			border: 1px solid #20367a;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+			margin-left: 3px;
+		}
+
+		.custom-image-label:hover {
+			border: 1px solid #20367a;
+			background-color: white;
+			color: #20367a;
+		}
+
+		#receiveAgreeMessage,
+		#emailMessage,
+		#agreementMessage {
+			color: red;
+		}
+
+		#headerContainer,
+		.background-image,
+		.top_inner,
+		.top_main,
+		.footer {
+			min-width: 1450px !important;
+		}
+
+		.flexTd {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+	</style>
+	<style>
+		.tableDiv {
+			width: 680px;
+			margin-right: 40px;
+			padding-right: 20px;
+			padding-left: 20px;
+		}
+
+		table {
+			width: 100%;
+		}
+	</style>
+</head>
+
+<div layout:fragment="content">
+	<div class="container">
+		<h1>청소 견적 문의하기</h1>
+		<div id="formContainer">
+			<form id="estimate">
+				<div class="tableDiv">
+					<table>
+						<tr>
+							<td class="tableHeader"><span>성함 (상호명)</span><span style="color: red">＊</span></td>
+							<td class="tableHeader">
+								<label for="cleaningService">청소 서비스 선택 </label><span style="color: red">＊</span>
+							</td>
+						</tr>
+						<tr>
+							<td><input type="text" id="name" maxlength="20"></td>
+							<td>
+								<select id="cleaningService" name="cleaningService">
+									<option value="">선택</option>
+									<option value="신축청소">신축 청소</option>
+									<option value="입주청소">입주 청소</option>
+									<option value="거주청소">거주 청소</option>
+									<option value="리모델링청소">리모델링 청소</option>
+									<option value="준공청소">준공 청소</option>
+									<option value="상가청소">상가 청소</option>
+									<option value="오피스청소">오피스 청소</option>
+									<option value="기타청소">기타 청소</option>
+								</select>
+							</td>
+						</tr>
+
+						<tr>
+							<td class="tableHeader">연락처
+								<span id="receiveAgreeMessage"></span>
+							</td>
+							<td class="tableHeader">수신 동의<span style="color: red">＊</span>
+								<span id="receiveAgreeMessage"></span>
+							</td>
+						</tr>
+						<tr>
+							<td class="flexTd">
+								<input type="text" id="phone" maxlength="13" value="010-" required>
+							</td>
+							<td>
+								<input type="checkbox" class="agreeInput" id="eamilAgree">
+								<label for="eamilAgree">이메일</label>
+								<input type="checkbox" class="agreeInput" id="smsAgree">
+								<label for="smsAgree">문자</label>
+								<input type="checkbox" class="agreeInput" id="callAgree">
+								<label for="callAgree">전화</label>
+
+							</td>
+						</tr>
+						<tr>
+							<td class="tableHeader" colspan="2">이메일 <span id="emailMessage"></span></td>
+						</tr>
+						<tr>
+							<td colspan="2"><input type="email" id="email" maxlength="30"></td>
+						</tr>
+						<tr>
+							<td class="tableHeader" colspan="2">주소<span style="color: red">＊</span></td>
+						</tr>
+						<tr>
+							<td colspan="2"><input type="text" id="postcode" placeholder="우편번호" readonly></td>
+						</tr>
+						<tr>
+							<td colspan="2"><input type="text" id="mainAddress" placeholder="주소" readonly></td>
+						</tr>
+						<tr>
+							<td colspan="2"><input type="text" id="detailAddress" autocomplete="off" placeholder="상세주소">
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2"><span id="addressMessage"></span></td>
+						</tr>
+						<tr>
+							<td class="tableHeader" colspan="2">내용</td>
+						</tr>
+						<tr>
+							<td colspan="2"><textarea id="content" placeholder="접수 내용"></textarea></td>
+						</tr>
+					</table>
+				</div>
+
+				<div id="rightDiv">
+					<span>이미지 첨부 </span>
+					<input type="file" id="image-input" accept="image/*" multiple style="display: none;">
+					<label for="image-input" class="custom-image-label">사진 선택</label>
+					<div id="preview"></div>
+					<img id="dal6" src="https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/dal6.png" alt="dal6">
+					<div class="buttonDiv">
+						<div id="agreeMentDiv">
+							<p id="agreementMessage"> </p>
+							<input type="checkbox" id="agreement">
+							<label for="agreement"> 개인정보 수집 및 이용 동의</label>
+							<a id="agreementClick" href="javascript:;"
+								onclick="javascript:footerlayerLoad('static/infoAgreement.html'); return false;">[원본]</a>
+						</div>
+						<input id="submitButton" type="submit" value="등록">
+					</div>
+				</div>
+				<div id="overlay"></div>
+			</form>
+		</div>
+
+		<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
+
+		<script type="text/javascript">
+			document.addEventListener("DOMContentLoaded", function () {
+				var name = "";
+				var phone = "010-";
+				var email = "";
+				var postcode = "";
+				var mainAddress = "";
+				var detailAddress = "";
+
+				document.getElementById("name").value = name;
+				document.getElementById("phone").value = phone;
+				document.getElementById("email").value = email;
+				document.getElementById("postcode").value = postcode;
+				document.getElementById("mainAddress").value = mainAddress;
+				document.getElementById("detailAddress").value = detailAddress;
+			});
+
+		</script>
+
+		<script type="module">
+			// 1. estimate.js에서 필요한 함수를 import
+			import {registerEstimate} from '/js/estimate.js';
+			import {searchAddress} from '/js/daumAddressSearch.js'; // daumAddressSearch4도 모듈로 사용
+
+			// --- 전역 변수 및 상수 선언 ---
+			const form = document.getElementById('estimate');
+			const imageInput = document.getElementById('image-input');
+			const previewContainer = document.getElementById('preview');
+			const MAX_IMAGES = 10;
+			const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+			let selectedFiles = []; // 실제 File 객체를 저장할 배열
+
+			// --- 이벤트 리스너 등록 ---
+
+			// 폼 제출 이벤트
+			form.addEventListener('submit', handleFormSubmit);
+
+			// 이미지 선택 이벤트
+			imageInput.addEventListener('change', handleImageSelection);
+
+			// 주소 검색 클릭 이벤트
+			document.getElementById('postcode').addEventListener('click', openDaumPostcode);
+			document.getElementById('mainAddress').addEventListener('click', openDaumPostcode);
+
+			// 연락처 자동 포맷팅
+			document.getElementById('phone').addEventListener('input', (e) => formatPhoneNumber(e.target));
+
+
+			// --- 함수 정의 ---
+
+			/**
+			 * Daum 주소 검색 API를 호출하는 함수
+			 */
+			function openDaumPostcode() {
+				searchAddress((postcode, address) => {
+					document.getElementById('postcode').value = postcode;
+					document.getElementById('mainAddress').value = address;
+					document.getElementById("detailAddress").focus();
+				});
+			}
+
+			/**
+			 * 폼 제출을 처리하는 메인 함수
+			 */
+			async function handleFormSubmit(event) {
+				event.preventDefault(); // 기본 제출 동작 방지
+
+				// 1. 폼 데이터 수집
+				const estimateDto = {
+					name: document.getElementById('name').value,
+					phone: document.getElementById('phone').value,
+					email: document.getElementById('email').value,
+					emailAgree: document.getElementById('eamilAgree').checked,
+					smsAgree: document.getElementById('smsAgree').checked,
+					callAgree: document.getElementById('callAgree').checked,
+					postcode: document.getElementById('postcode').value,
+					mainAddress: document.getElementById('mainAddress').value,
+					detailAddress: document.getElementById('detailAddress').value,
+					cleaningService: document.getElementById('cleaningService').value,
+					content: document.getElementById('content').value,
+					agreement: document.getElementById('agreement').checked,
+				};
+
+				// 2. API 호출
+				try {
+					const result = await registerEstimate(estimateDto, selectedFiles);
+
+					console.log('등록 성공:', result);
+					alert("이용해 주셔서 감사합니다.\n빠른 답변 드리겠습니다.");
+					location.reload();
+
+				} catch (error) {
+					console.error('견적 제출 실패:', error);
+					alert(error.message || '제출에 실패했습니다. 입력 내용을 확인해주세요.');
+				}
+			}
+
+			// --- 이미지 처리 관련 함수들 ---
+
+			function handleImageSelection(event) {
+				const files = Array.from(event.target.files);
+				const remainingSlots = MAX_IMAGES - selectedFiles.length;
+
+				if ((selectedFiles.length + files.length) > MAX_IMAGES) {
+					alert(`이미지는 최대 ${MAX_IMAGES}장까지 업로드할 수 있습니다.`);
+				}
+
+				const availableFiles = files.slice(0, remainingSlots);
+
+				for (const file of availableFiles) {
+					if (file.size > MAX_FILE_SIZE) {
+						alert(`이미지 1장의 최대 용량은 10MB입니다. (${file.name} 제외)`);
+						continue; // 용량 초과 파일은 건너뛰기
+					}
+					selectedFiles.push(file);
+					displayPreview(file, selectedFiles.length - 1);
+				}
+			}
+
+			function displayPreview(file, index) {
+				const reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = () => {
+					const div = document.createElement('div');
+					div.className = 'image-preview';
+
+					const img = document.createElement('img');
+					img.src = reader.result;
+					img.style.width = '140px';
+					img.style.height = '140px';
+
+					const removeButton = document.createElement('button');
+					removeButton.innerHTML = '&times;';
+					removeButton.dataset.index = index; // 인덱스를 버튼에 저장
+
+					removeButton.addEventListener('click', (e) => {
+						const indexToRemove = parseInt(e.target.dataset.index, 10);
+						// selectedFiles에서 해당 파일 제거
+						selectedFiles.splice(indexToRemove, 1);
+						// 미리보기 다시 그리기
+						redrawPreview();
+					});
+
+					div.append(img, removeButton);
+					previewContainer.append(div);
+				};
+			}
+
+			function redrawPreview() {
+				// 미리보기 영역을 비우고
+				previewContainer.innerHTML = '';
+				// 현재 selectedFiles 배열 기준으로 다시 그림
+				selectedFiles.forEach((file, index) => displayPreview(file, index));
+			}
+
+			// --- 포맷팅 헬퍼 함수 ---
+			function formatPhoneNumber(input) {
+				// ... (기존 휴대폰 번호 포맷팅 로직) ...
+				let value = input.value.replace(/[^0-9]/g, '');
+				let result = [];
+				if (value.length >= 3) {
+					result.push(value.substring(0, 3));
+					value = value.substring(3);
+					if (value.length >= 4) {
+						result.push(value.substring(0, 4));
+						value = value.substring(4);
+						if (value.length > 0) result.push(value);
+					} else if (value.length > 0) {
+						result.push(value);
+					}
+				} else {
+					result.push(value);
+				}
+				input.value = result.join('-');
+			}
+
+		</script>
+	</div>
+</div>
+
+</html>
