@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.chamman.moonnight.domain.comment.dto.CommentRequestDto;
 import net.chamman.moonnight.domain.comment.dto.CommentResponseDto;
-import net.chamman.moonnight.global.security.principal.CustomUserDetails;
+import net.chamman.moonnight.global.security.principal.CustomAdminDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
 
@@ -37,24 +37,24 @@ public class CommentController {
 	private final ApiResponseFactory apiResponseFactory;
 	
 //  댓글 등록
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/private/register")
 	public ResponseEntity<ApiResponseDto<CommentResponseDto>> registerComment(
-			@AuthenticationPrincipal CustomUserDetails userDetails, 
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
-		CommentResponseDto commentResponseDto = commentService.registerComment(userDetails.getUserId(), commentRequestDto);
+		CommentResponseDto commentResponseDto = commentService.registerComment(customAdminDetails.getAdminId(), commentRequestDto);
 		
 		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, commentResponseDto));
 	}
 	
 //  견적의 댓글 목록 조회 
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+	@PreAuthorize("hasRole('ADMIN')")
 	@GetMapping("/private/estimate/{estimateId}")
 	public ResponseEntity<ApiResponseDto<List<CommentResponseDto>>> getCommentList(
-			@AuthenticationPrincipal CustomUserDetails userDetails, 
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@PathVariable("estimateId") int encodedEstimateId) {
-		List<CommentResponseDto> list = commentService.getCommentList(encodedEstimateId, userDetails.getUserId());
+		List<CommentResponseDto> list = commentService.getCommentList(encodedEstimateId, customAdminDetails.getAdminId());
 		if(list==null) {
 			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
 		}
@@ -65,11 +65,11 @@ public class CommentController {
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@PatchMapping("/private/{commentId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateComment(
-			@AuthenticationPrincipal CustomUserDetails userDetails, 
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@PathVariable("commentId") int encodedCommentId, 
 			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
-		commentService.updateComment(userDetails.getUserId(), encodedCommentId, commentRequestDto);
+		commentService.updateComment(encodedCommentId, commentRequestDto, customAdminDetails.getAdminId());
 		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
 	}
 	
@@ -77,10 +77,10 @@ public class CommentController {
 	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
 	@DeleteMapping("/private/{commentId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteComment(
-			@AuthenticationPrincipal CustomUserDetails userDetails, 
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@PathVariable("commentId") int encodedCommentId) {
 		
-		commentService.deleteComment(userDetails.getUserId(), encodedCommentId);
+		commentService.deleteComment(customAdminDetails.getAdminId(), encodedCommentId);
 		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
 	

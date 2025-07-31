@@ -42,7 +42,7 @@ public class AesProvider {
 	 * @return
 	 */
 	public String encrypt(String plainText) {
-		log.debug("*암호화. 대상: [{}]", LogMaskingUtil.maskText(plainText, MaskLevel.MEDIUM));
+		log.debug("* 암호화. 대상: [{}]", LogMaskingUtil.maskText(plainText, MaskLevel.MEDIUM));
 		
 		try {
 			Cipher cipher = Cipher.getInstance(ALGORITHM);
@@ -69,7 +69,7 @@ public class AesProvider {
 	 * @return
 	 */
 	public String decrypt(String encryptedText) {
-		log.debug("*복호화. 대상: [{}]", LogMaskingUtil.maskText(encryptedText, MaskLevel.MEDIUM));
+		log.debug("* 복호화. 대상: [{}]", LogMaskingUtil.maskText(encryptedText, MaskLevel.MEDIUM));
 
 		try {
 			byte[] decoded = Base64.getDecoder().decode(encryptedText);

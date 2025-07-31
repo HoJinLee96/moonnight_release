@@ -58,33 +58,33 @@ public class JwtProvider {
 	}
 	
 	/**
-	 * @param userId
+	 * @param adminId
 	 * @param roles
 	 * @param claims
 	 * @throws CreateJwtException {@link #createAccessToken}, {@link #createRefreshToken} 토큰 생성 실패
 	 * @return 액세스토큰, 리프레쉬토큰
 	 */
-	public Map<String,String> createSignToken(int userId, List<String> roles, Map<String, Object> claims) {
-		String accessToken = createAccessToken(userId, roles, claims);
-		String refreshToken = createRefreshToken(userId);
+	public Map<String,String> createSignToken(int adminId, List<String> roles, Map<String, Object> claims) {
+		String accessToken = createAccessToken(adminId, roles, claims);
+		String refreshToken = createRefreshToken(adminId);
 //		log.debug("* 로그인 토큰 발행 완료. accessToken: [{}], refreshToken: [{}]", accessToken, refreshToken);
 		return Map.of("accessToken",accessToken,"refreshToken",refreshToken);
 	}
 	
 	/** 액세스 토큰 생성
-	 * @param userId
+	 * @param adminId
 	 * @param roles
 	 * @param claims
 	 * @return 액세스 토큰
 	 * 
 	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
 	 */
-	private String createAccessToken(int userId, List<String> roles, Map<String, Object> claims) {
-		log.debug("* AccessToken 발행. UserID: [{}], Roles: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM), roles.get(0));
+	private String createAccessToken(int adminId, List<String> roles, Map<String, Object> claims) {
+		log.debug("* AccessToken 발행. adminId: [{}], roles: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.MEDIUM), roles.get(0));
 		
 		try {
 			JwtBuilder builder = Jwts.builder()
-					.setSubject(aesProvider.encrypt(String.valueOf(userId)))
+					.setSubject(aesProvider.encrypt(String.valueOf(adminId)))
 					.setIssuedAt(new Date())
 					.setExpiration(new Date(System.currentTimeMillis() + expiration1Hour))
 					.signWith(signAccessHmacShaKey, SignatureAlgorithm.HS256);
@@ -107,17 +107,17 @@ public class JwtProvider {
 	}
 	
 	/** 리프레쉬 토큰 생성
-	 * @param userId
+	 * @param adminId
 	 * @return 리프레쉬 토큰
 	 * 
 	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
 	 */
-	private String createRefreshToken(int userId) {
-		log.debug("* RefreshToken 발행. UserID: [{}]", LogMaskingUtil.maskId(userId, MaskLevel.MEDIUM));
+	private String createRefreshToken(int adminId) {
+		log.debug("* RefreshToken 발행. adminId: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.MEDIUM));
 		
 		try {
 			return Jwts.builder()
-					.setSubject(aesProvider.encrypt(userId + ""))
+					.setSubject(aesProvider.encrypt(adminId + ""))
 					.setExpiration(new Date(System.currentTimeMillis() + expiration14Days))
 					.signWith(signRefreshHmacShaKey, SignatureAlgorithm.HS256)
 					.compact();
@@ -183,7 +183,7 @@ public class JwtProvider {
 	
 	/** 리프레쉬 토큰 검증
 	 * @param token
-	 * @return userId
+	 * @return adminId
 	 * 
 	 * @throws TimeOutJwtException {@link #validateRefreshToken} 시간 초과
 	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
@@ -198,8 +198,8 @@ public class JwtProvider {
 					.parseClaimsJws(token)
 					.getBody();
 			
-			String encryptedUserId = claims.getSubject(); 
-			return aesProvider.decrypt(encryptedUserId);
+			String encryptedAdminId = claims.getSubject(); 
+			return aesProvider.decrypt(encryptedAdminId);
 		} catch (ExpiredJwtException e) {
 			throw new TimeOutJwtException(JWT_EXPIRED, "RefreshToken 시간 만료. "+e.getMessage(), e);
 		} catch (Exception e) {

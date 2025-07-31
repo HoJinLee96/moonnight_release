@@ -1,12 +1,10 @@
 package net.chamman.moonnight.global.util;
 
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Optional;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.util.SerializationUtils;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,30 +49,4 @@ public class CookieUtil {
             }
         }
     }
-    
-    public static String serialize(Object object) {
-        return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(object));
-    }
-
-	public static <T> T deserialize(Cookie cookie, Class<T> cls) {
-        return cls.cast(SerializationUtils.deserialize(
-                        Base64.getUrlDecoder().decode(cookie.getValue())));
-    }
-//    public static String serialize(Object object) {
-//        try {
-//            String json = objectMapper.writeValueAsString(object);
-//            return Base64.getUrlEncoder().encodeToString(json.getBytes());
-//        } catch (Exception e) {
-//            throw new EncodingException(ENCODING_FAIL, "객체 직렬화 실패.", e);
-//        }
-//    }
-//
-//    public static <T> T deserialize(Cookie cookie, Class<T> cls) {
-//        try {
-//            byte[] decodedBytes = Base64.getUrlDecoder().decode(cookie.getValue());
-//            return objectMapper.readValue(new String(decodedBytes), cls);
-//        } catch (Exception e) {
-//            throw new DecodingException(DECODING_FAIL, "쿠키 역직렬화 실패.", e);
-//        }
-//    }
 }

@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,14 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.token.JwtProvider;
 import net.chamman.moonnight.auth.token.TokenProvider;
-import net.chamman.moonnight.domain.address.AddressService;
-import net.chamman.moonnight.domain.address.dto.AddressResponseDto;
 import net.chamman.moonnight.domain.estimate.EstimateService;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
-import net.chamman.moonnight.domain.user.User;
-import net.chamman.moonnight.domain.user.UserService;
-import net.chamman.moonnight.domain.user.dto.UserResponseDto;
-import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.CookieUtil;
 
 @Controller
@@ -32,29 +25,12 @@ import net.chamman.moonnight.global.util.CookieUtil;
 @RequiredArgsConstructor
 public class EstimateViewController {
 
-	private final UserService userService;
-	private final AddressService addressService;
 	private final EstimateService estimateService;
 	private final TokenProvider tokenProvider;
 	private final JwtProvider jwtProvider;
 
 	@GetMapping("/estimate/register")
-	public String showEstimate(@AuthenticationPrincipal CustomUserDetails customUserDetails, Model model) {
-
-		if (customUserDetails != null) {
-			User user = userService.getActiveUserByUserId(customUserDetails.getUserId());
-			List<AddressResponseDto> addressList = addressService.getAddressList(customUserDetails.getUserId());
-			model.addAttribute("user", UserResponseDto.fromEntity(user,null));
-			model.addAttribute("addressList", addressList);
-			log.debug("addressList: {}", addressList.toArray().toString());
-			if (addressList != null && !addressList.isEmpty()) {
-				AddressResponseDto primaryAddress = addressList.stream().filter(AddressResponseDto::isPrimary)
-						.findFirst().orElse(addressList.get(0));
-				model.addAttribute("primaryAddress", primaryAddress);
-				log.debug("primaryAddress: {}", primaryAddress);
-			}
-		}
-
+	public String showEstimate() {
 		return "estimate/estimateRegister";
 	}
 
@@ -79,7 +55,7 @@ public class EstimateViewController {
 		}
 		Map<String, Object> claims = jwtProvider.validateAuthToken(authToken);
 		String recipient = (String) claims.get("recipient");
-		List<EstimateResponseDto> list = estimateService.getAllEstimateByAuth(recipient);
+		List<EstimateResponseDto> list = estimateService.getEstimateResponseDtoListByAuth(recipient);
 		model.addAttribute("estimateList", list);
 		return "estimate/estimateSearch";
 	}

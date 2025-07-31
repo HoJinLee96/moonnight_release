@@ -3,8 +3,6 @@ package net.chamman.moonnight.global.exception;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.INTERNAL_SERVER_ERROR;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.REQUEST_BODY_NOT_VALID;
 
-import java.util.Map;
-
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -16,7 +14,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.global.exception.user.DuplicationException;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
 
@@ -28,13 +25,6 @@ public class GlobalExceptionHandler {
 
 	private final ApiResponseFactory apiResponseFactory;
 
-	@ExceptionHandler(DuplicationException.class)
-	public ResponseEntity<ApiResponseDto<Map<String, String>>> handleCriticalException(DuplicationException ex) {
-		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();
-		log.error("* {} 발생. HttpStatusCode: [{}]", ex.getClass().getSimpleName(), httpStatusCode.toString());
-		return ResponseEntity.status(httpStatusCode.getStatus()).body(apiResponseFactory.error(httpStatusCode, Map.of("provider", ex.getUserProvider().toString(), "email", ex.getExistValue())));
-	}
-	
 	@ExceptionHandler(CriticalException.class)
 	public ResponseEntity<ApiResponseDto<Void>> handleCriticalException(CriticalException ex) {
 		HttpStatusCode httpStatusCode = ex.getHttpStatusCode();

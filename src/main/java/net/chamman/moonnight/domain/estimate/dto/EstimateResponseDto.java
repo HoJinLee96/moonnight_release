@@ -6,7 +6,6 @@ import java.util.List;
 import lombok.Builder;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate;
-import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 
 @Builder
@@ -20,7 +19,7 @@ public record EstimateResponseDto(
      String postcode,
      String mainAddress,
      String detailAddress,
-     CleaningService cleaningService,
+     String cleaningService,
      String content,
      List<String> images,
      EstimateStatus estimateStatus,

@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
 import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
-import net.chamman.moonnight.domain.user.User;
 
 public record EstimateRequestDto(
     
@@ -48,12 +47,11 @@ public record EstimateRequestDto(
     @Size(max = 5000, message = "validation.estimate.content.length")
     String content,
     
-    List<String> imagesPath
+    List<String> deletedImagesPath
     ) {
   
-  public Estimate toEntity(User user, List<String> imagesPath) {
+  public Estimate toEntity(List<String> imagesPath, String clientIp) {
     return Estimate.builder()
-        .user(user)
         .name(name)
         .phone(phone)
         .email(email)
@@ -62,10 +60,11 @@ public record EstimateRequestDto(
         .postcode(postcode)
         .mainAddress(mainAddress)
         .detailAddress(detailAddress)
-        .cleaningService(cleaningService)
+        .cleaningService(cleaningService.name())
         .content(content)
         .imagesPath(imagesPath)
         .estimateStatus(EstimateStatus.RECEIVE)
+        .clientIp(clientIp)
         .build();
   }
 

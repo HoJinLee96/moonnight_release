@@ -1,6 +1,7 @@
 package net.chamman.moonnight.domain.comment.dto;
 
 import java.time.LocalDateTime;
+
 import lombok.Builder;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.comment.Comment;
@@ -16,8 +17,8 @@ public record CommentResponseDto(
     boolean isMine
 
 ) {
-  public static CommentResponseDto fromEntity(Comment comment, int userId, Obfuscator obfuscator) {
-    boolean isMine = comment.getUser().getUserId()==userId;
+  public static CommentResponseDto fromEntity(Comment comment, int adminId, Obfuscator obfuscator) {
+    boolean isMine = comment.getAdmin().getAdminId()==adminId;
     return CommentResponseDto.builder()
     .estimateId(obfuscator.encode(comment.getEstimate().getEstimateId()))
     .commentId(obfuscator.encode(comment.getCommentId()))

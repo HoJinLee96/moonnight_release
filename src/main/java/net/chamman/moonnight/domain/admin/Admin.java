@@ -1,4 +1,4 @@
-package net.chamman.moonnight.domain.comment;
+package net.chamman.moonnight.domain.admin;
 
 import java.time.LocalDateTime;
 
@@ -11,47 +11,43 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import net.chamman.moonnight.domain.admin.Admin;
-import net.chamman.moonnight.domain.estimate.Estimate;
 
 @Entity
-@Table(name="comment")
+@Table(name = "admin")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Comment {
+public class Admin {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "comment_id") 
-	private int commentId;
+	@Column(name = "admin_id")
+	private int adminId;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "admin_id", nullable = false, foreignKey = @ForeignKey(name = "FK_admin_TO_comment_1"))
-	private Admin admin;
+	@Column(name = "email", length=50, nullable=false)
+	private String email;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "estimate_id", nullable = false, foreignKey = @ForeignKey(name = "FK_estimate_TO_comment_1"))
-	private Estimate estimate;
+	@Column(name = "password", length=60)
+	private String password;
 	
-	@Column(name = "comment_text", length = 250, nullable = false)
-	private String commentText;
+	@Column(name = "name", length=20)
+	private String name;
 	
+	@Column(name = "phone", length=15)
+	private String phone;
+	
+	@Column(name = "admin_status", nullable=false)
 	@Enumerated(EnumType.STRING)
 	@Basic(fetch = FetchType.EAGER)
-	@Column(name = "comment_status", nullable = false)
-	private CommentStatus commentStatus;
+	private AdminStatus adminStatus;
 	
 	@Generated(event = EventType.INSERT)
 	@Column(name = "created_at", updatable = false)
@@ -61,8 +57,8 @@ public class Comment {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 	
-	public enum CommentStatus{
-		ACTIVE, DELETE 
-	}
 	
+	public static enum AdminStatus {
+		ACTIVE, STAY, STOP, DELETE;
+	}
 }

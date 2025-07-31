@@ -22,10 +22,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.sign.SignService;
-import net.chamman.moonnight.auth.sign.log.SignLogService;
+import net.chamman.moonnight.auth.adminSign.AdminSignService;
+import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.token.JwtProvider;
-import net.chamman.moonnight.auth.token.TokenAuthenticator;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.global.context.RequestContext;
@@ -40,11 +39,10 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 
 	protected final JwtProvider jwtProvider;
 	protected final TokenProvider tokenProvider;
-	protected final SignLogService signLogService;
-	protected final SignService signService;
-	public final TokenAuthenticator tokenAuthenticator;
+	protected final AdminSignLogService signLogService;
+	protected final AdminSignService signService;
 
-	protected abstract T buildUserDetails(String accessToken);
+	protected abstract T buildAdminDetails(String accessToken);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain)
@@ -119,7 +117,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 			}
 			// 그 외 에러
 		} catch (Exception e) {
-			log.error("AT validate 실패 또는 UserDetails 생성 중 실패.", e);
+			log.error("* accressToken validate 실패 또는 CustomAdminDetails 생성 중 실패.", e);
 			initTokenToCookie(res);
 			setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
 			return;
@@ -191,9 +189,9 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 	}
 
 	protected void setAuthentication(String accessToken) {
-		T userDetails = buildUserDetails(accessToken);
-		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
-				userDetails.getAuthorities());
+		T adminDetails = buildAdminDetails(accessToken);
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(adminDetails, null,
+				adminDetails.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 }

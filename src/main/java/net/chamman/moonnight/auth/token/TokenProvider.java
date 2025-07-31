@@ -19,10 +19,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.AesProvider;
 import net.chamman.moonnight.auth.crypto.Encryptable;
-import net.chamman.moonnight.auth.oauth.CustomOAuth2User;
-import net.chamman.moonnight.auth.token.dto.FindPwTokenDto;
-import net.chamman.moonnight.auth.token.dto.PasswordTokenDto;
-import net.chamman.moonnight.auth.token.dto.SignUpTokenDto;
+import net.chamman.moonnight.auth.token.dto.AdminSignUpTokenDto;
+import net.chamman.moonnight.auth.token.dto.FindAdminPwTokenDto;
+import net.chamman.moonnight.auth.token.dto.AdminPasswordConfirmTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.global.exception.redis.RedisGetException;
@@ -45,10 +44,9 @@ public class TokenProvider {
 	public enum TokenType {
 		VERIFICATION_PHONE("verification:phone:", Duration.ofMinutes(5), VerificationPhoneTokenDto.class),
 		VERIFICATION_EMAIL("verification:email:", Duration.ofMinutes(5), VerificationEmailTokenDto.class),
-		ACCESS_FINDPW("access:findpw:", Duration.ofMinutes(5), FindPwTokenDto.class),
-		ACCESS_PASSWORD("access:password:", Duration.ofMinutes(5), PasswordTokenDto.class),
-		ACCESS_SIGNUP("access:signup:", Duration.ofMinutes(10), SignUpTokenDto.class),
-		ACCESS_SIGNUP_OAUTH("access:signup:oauth:", Duration.ofMinutes(10), CustomOAuth2User.class),
+		ACCESS_FINDPW("access:findpw:", Duration.ofMinutes(5), FindAdminPwTokenDto.class),
+		ACCESS_PASSWORD("access:password:", Duration.ofMinutes(5), AdminPasswordConfirmTokenDto.class),
+		ACCESS_SIGNUP("access:signup:", Duration.ofMinutes(10), AdminSignUpTokenDto.class),
 		JWT_REFRESH("jwt:refresh:",Duration.ofDays(14), null),
 		JWT_BLACKLIST("jwt:blacklist:",null, null);
 		

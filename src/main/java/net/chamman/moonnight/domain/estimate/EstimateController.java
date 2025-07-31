@@ -36,7 +36,6 @@ import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
 import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.security.principal.AuthDetails;
-import net.chamman.moonnight.global.security.principal.CustomUserDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
 
@@ -53,50 +52,20 @@ public class EstimateController {
 	@Operation(summary = "견적서 등록", description = "견적서 등록")
 	@PostMapping("/public/register")
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> registerEstimate(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
 			@Valid @ImageConstraint @RequestPart(required = false) List<MultipartFile> images,
 			HttpServletRequest request ) throws IOException, URISyntaxException {
 
-		log.debug("* estimateRequestDto: {}", estimateRequestDto.toString());
+		log.debug("* 견적서 등록 estimateRequestDto: {}", estimateRequestDto.toString());
 		if(images != null) {
-			images.forEach(path -> log.debug("* image: {}", path.getName()));
+			images.forEach(path -> log.debug("* 견적서 imagesPath: {}", path.getName()));
 		}
 
 		String clientIp = RequestContextHolder.getContext().getClientIp();
 
-		Integer userId = userDetails != null ? userDetails.getUserId() : null;
-		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, userId, clientIp);
+		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, clientIp);
 
 		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, estimateResponseDto));
-	}
-
-//  유저 견적서 전체 조회
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
-	@GetMapping("/private/user")
-	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> getMyAllEstimateByUserId(
-			@AuthenticationPrincipal CustomUserDetails userDetails) {
-
-		List<EstimateResponseDto> list = estimateService.getMyAllEstimate(userDetails.getUserId());
-
-		if (list == null || list.isEmpty() || list.size() == 0) {
-			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
-		}
-
-		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, list));
-	}
-
-//  유저 견적서 단건 조회
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
-	@GetMapping("/private/user/{estimateId}")
-	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getMyEstimateByEstimateId(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable("estimateId") int encodedEstimateId) {
-
-		EstimateResponseDto estimateResponseDto = estimateService.getMyEstimateByEstimateId(encodedEstimateId,
-				userDetails.getUserId());
-
-		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
 	}
 
 //  AUTH 토큰 통해 견적서 전체 조회
@@ -105,7 +74,7 @@ public class EstimateController {
 	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> getAllEstimateByAuth(
 			@AuthenticationPrincipal AuthDetails authDetails) {
 
-		List<EstimateResponseDto> list = estimateService.getAllEstimateByAuth(authDetails.getRecipient());
+		List<EstimateResponseDto> list = estimateService.getEstimateResponseDtoListByAuth(authDetails.getRecipient());
 
 		if (list == null || list.isEmpty() || list.size() == 0) {
 			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
@@ -121,7 +90,7 @@ public class EstimateController {
 			@AuthenticationPrincipal AuthDetails authDetails,
 			@PathVariable("estimateId") int encodedEstimateId) {
 
-		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndAuthRecipient(encodedEstimateId,
+		EstimateResponseDto estimateResponseDto = estimateService.getEstimateResponseDtoByIdAndAuthRecipient(encodedEstimateId,
 				authDetails.getRecipient());
 
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
@@ -133,25 +102,10 @@ public class EstimateController {
 			@RequestParam("estimateId") int encodedEstimateId,
 			@RequestParam String recipient) {
 
-		EstimateResponseDto estimateResponseDto = estimateService.getEstimateByEstimateIdAndAuthRecipient(encodedEstimateId,
+		EstimateResponseDto estimateResponseDto = estimateService.getEstimateResponseDtoByIdAndAuthRecipient(encodedEstimateId,
 				recipient);
 
 		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
-	}
-
-//  유저 견적서 수정
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
-	@PatchMapping("/private/update/{estimateId}")
-	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateEstimateByUser(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable("estimateId") int encodedEstimateId,
-			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
-			@ImageConstraint @RequestPart(value = "images", required = false) List<MultipartFile> images, HttpServletRequest request)
-			throws IOException {
-
-		EstimateResponseDto estimateResponseDto = estimateService.updateMyEstimate(encodedEstimateId, estimateRequestDto, images, userDetails.getUserId());
-
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
 	}
 
 //  AUTH 토큰 통해 견적서 수정
@@ -169,18 +123,6 @@ public class EstimateController {
 				authDetails.getRecipient());
 
 		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
-	}
-
-//  사용자 견적서 삭제
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
-	@DeleteMapping("/private/{estimateId}")
-	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByUser(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable("estimateId") int encodedEstimateId) {
-
-		estimateService.deleteMyEstimate(encodedEstimateId, userDetails.getUserId());
-
-		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}
 
 //  AUTH 토큰 통해 견적서 삭제
