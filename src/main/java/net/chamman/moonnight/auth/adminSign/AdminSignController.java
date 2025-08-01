@@ -96,7 +96,7 @@ public class AdminSignController {
 				customAdminDetails != null ? customAdminDetails.getAdminId() : "anonymous",
 				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), clientIp, isMobileApp ? "mobile" : "web");
 
-		adminSignService.signOut(customAdminDetails.getUsername(), accessToken, refreshToken, clientIp);
+		adminSignService.signOut(customAdminDetails.getAdminId(), accessToken, refreshToken, clientIp);
 
 		if (!isMobileApp) {
 			CookieUtil.deleteCookie(req, res, "X-Access-Token");
@@ -179,7 +179,7 @@ public class AdminSignController {
 
 		adminService.confirmPassword(customAdminDetails.getAdminId(), password, clientIp);
 		adminSignService.deleteAdmin(customAdminDetails.getAdminId(), clientIp);
-		adminSignService.signOut(customAdminDetails.getUsername(), accessToken, refreshToken, clientIp);
+		adminSignService.signOut(customAdminDetails.getAdminId(), accessToken, refreshToken, clientIp);
 
 		if (!isMobileApp) {
 			CookieUtil.deleteCookie(req, res, "X-Access-Token");

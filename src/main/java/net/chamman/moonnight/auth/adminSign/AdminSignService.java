@@ -244,10 +244,11 @@ public class AdminSignService {
 		 * 
 		 * @throws IllegalJwtException(@link #signOutLocal)
 		 */
-		public void signOut(String adminId, String accessToken, String refreshToken, String clientIp) {
+		public void signOut(int adminId, String accessToken, String refreshToken, String clientIp) {
 			log.debug("* AccessToken: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
 			log.debug("* RefreshToken: [{}]", LogMaskingUtil.maskToken(refreshToken, MaskLevel.MEDIUM));
-			adminSignLogService.registerSignLog(AdminSignLog.builder().adminId(adminId).clientIp(clientIp)
+			Admin admin = adminService.getActiveAdminByAdminId(adminId);
+			adminSignLogService.registerSignLog(AdminSignLog.builder().admin(admin).clientIp(clientIp)
 					.signResult(SignResult.SIGNOUT).build());
 			
 	//		1. accessToken 블랙리스트 등록
@@ -365,7 +366,7 @@ public class AdminSignService {
 		admin.setName("탈퇴한사용자");
 		adminRepository.save(admin);
 
-		adminSignLogService.registerSignLog(AdminSignLog.builder().adminId(adminId + "").clientIp(clientIp).signResult(SignResult.DELETE).build());
+		adminSignLogService.registerSignLog(AdminSignLog.builder().admin(admin).clientIp(clientIp).signResult(SignResult.DELETE).build());
 	}
 
 	/**

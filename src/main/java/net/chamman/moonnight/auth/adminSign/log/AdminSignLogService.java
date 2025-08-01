@@ -33,7 +33,7 @@ public class AdminSignLogService {
 	public AdminSignLog signAdmin(Admin admin, SignResult signResult, String clientIp) {
 		return adminSignLogRepository.save(
 				AdminSignLog.builder()
-				.adminId(admin.getAdminId()+"")
+				.admin(admin)
 				.signResult(signResult)
 				.clientIp(clientIp)
 				.build());

@@ -14,18 +14,18 @@ import net.chamman.moonnight.auth.adminSign.log.AdminSignLog.SignResult;
 @Repository
 public interface AdminSignLogRepository extends JpaRepository<AdminSignLog, Integer> {
 	
-	@Query("SELECT COUNT(l) FROM SignLog l WHERE l.adminId = :adminId AND l.provider = :provider AND l.resolveBy IS NULL AND l.signResult NOT IN :excludedResults")
+	@Query("SELECT COUNT(l) FROM AdminSignLog l WHERE l.admin.adminId = :adminId AND l.resolveBy IS NULL AND l.signResult NOT IN :excludedResults")
 	int countUnresolvedFailed(
 			@Param("adminId") String adminId, 
 			@Param("excludedResults") List<SignResult> excludedResults);
 	
-	@Query("SELECT COUNT(l) FROM SignLog l WHERE l.adminId = :adminId AND l.provider = :provider AND l.resolveBy IS NULL AND l.signResult IN :includedResults")
+	@Query("SELECT COUNT(l) FROM AdminSignLog l WHERE l.admin.adminId = :adminId AND l.resolveBy IS NULL AND l.signResult IN :includedResults")
 	int countUnresolvedWithResults(
 			@Param("adminId") String adminId, 
 			@Param("includedResults") List<SignResult> includedResults);
 	
 	@Transactional @Modifying
-	@Query("UPDATE SignLog l SET l.resolveBy = :signLog WHERE l.adminId = :adminId AND l.resolveBy IS NULL AND l.signResult IN :includedResults")
+	@Query("UPDATE AdminSignLog l SET l.resolveBy = :signLog WHERE l.admin.adminId = :adminId AND l.resolveBy IS NULL AND l.signResult IN :includedResults")
 	int resolveUnresolvedLogs(
 			@Param("adminId") String adminId,
 			@Param("signLog") AdminSignLog signLog,

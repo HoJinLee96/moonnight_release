@@ -23,6 +23,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.chamman.moonnight.domain.admin.Admin;
 
 @Entity
 @Table(name="admin_sign_log")
@@ -37,8 +38,9 @@ public class AdminSignLog {
 	@Column(name ="admin_sign_log_id")
 	private int signLogId;
 	
-	@Column(name ="admin_id", length=10)
-	private String adminId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "admin_id", nullable = true, foreignKey = @ForeignKey(name = "FK_admin_TO_admin_sign_log_1"))
+	private Admin admin;
 	
 	@Column(name = "client_ip", length = 50, nullable = false)
 	private String clientIp;
@@ -52,7 +54,7 @@ public class AdminSignLog {
 	private String reason;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "resolve_by", referencedColumnName = "sign_log_id", foreignKey = @ForeignKey(name = "sign_log_resolve_by"))
+	@JoinColumn(name = "resolve_by", referencedColumnName = "admin_sign_log_id", foreignKey = @ForeignKey(name = "sign_log_resolve_by"))
 	private AdminSignLog resolveBy;
 	
 	@Generated(event = EventType.INSERT)
