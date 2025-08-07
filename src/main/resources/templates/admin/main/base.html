@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+	<meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+	<title layout:fragment="title">기본 제목</title>
+	<style>
+		:root {
+			--main-color: #20367a;
+			--main-text-color: #333;
+			--main-text-color-light: white;
+			--main-text-color-gray: #3b3b3b;
+			--border-color: #efefef;
+			--error-color: red;
+			--base-border-radius: 5px;
+			--font-size-base: 16px;
+			--layout-min-width: 940px;
+			--layout-max-width: 1920px;
+			--layout-min-height: 650px;
+		}
+
+		/* body는 이제 여백과 기본 폰트 설정만 담당 */
+		body {
+			margin: 0;
+			padding: 0;
+			font-size: var(--font-size-base);
+			color: var(--main-text-color);
+		}
+
+		/* main이 페이지의 전체적인 너비와 중앙 정렬을 모두 책임짐 */
+		main {
+			min-height: var(--layout-min-height);
+			min-width: var(--layout-min-width);
+			max-width: var(--layout-max-width);
+			margin: 0 auto;
+		}
+
+		.container {
+			padding: 50px 0px;
+			min-height: 1080px;
+		}
+	</style>
+	<style>
+		/* 공용 버튼 스타일 */
+		.btn {
+			padding: 12px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: bold;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+			text-decoration: none;
+		}
+
+		.btn:disabled {
+			background-color: #ccc;
+			cursor: not-allowed;
+		}
+
+		.btn-primary {
+			background-color: #20367a;
+			color: white;
+			width: 100%;
+			/* 버튼 너비를 폼과 맞춤 */
+		}
+
+		.btn-primary:hover:not(:disabled) {
+			background-color: #182a5e;
+		}
+
+		.btn-primary-mini {
+			background-color: #20367a;
+			color: white !important;
+		}
+
+		.btn-primary-mini:hover:not(:disabled) {
+			background-color: #182a5e;
+		}
+
+		.btn-secondary {
+			background-color: #e9ecef;
+			color: #495057;
+			border: 1px solid #dee2e6;
+		}
+
+		.btn-secondary:hover:not(:disabled) {
+			background-color: #c7cacc;
+		}
+		
+		.btn-tertiary {
+			background-color: var(--border-color);
+			color: var(--main-text-color-gray);
+		}
+		
+		.btn-tertiary:hover:not(:disabled) {
+			background-color: #e2e2e2;
+		}
+		
+		.btn-outline {
+			background-color: white;
+			color: #20367a;
+			border: 1px solid #20367a;
+		}
+
+		.btn-outline:hover {
+			background-color: #20367a;
+			color: white;
+		}
+	</style>
+	<th:block th:replace="~{admin/main/header :: headerCss}" />
+
+</head>
+
+<body>
+	<header th:replace="~{admin/main/header :: headerFragment}"></header>
+
+	<th:block layout:fragment="content">
+		<!-- 각 페이지에서 채울 영역 -->
+	</th:block>
+
+	<th:block th:replace="~{admin/main/header :: headerJs}" />
+
+	<th:block layout:fragment="script" />
+</body>
+
+</html>

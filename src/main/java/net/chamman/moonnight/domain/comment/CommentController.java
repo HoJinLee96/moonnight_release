@@ -7,6 +7,7 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS
 import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,7 +30,7 @@ import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
 
 @RestController
-@RequestMapping("/api/comment")
+@RequestMapping("/api/admin/comment")
 @RequiredArgsConstructor
 public class CommentController {
 	
@@ -43,14 +44,14 @@ public class CommentController {
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@Valid @RequestBody CommentRequestDto commentRequestDto) {
 		
-		CommentResponseDto commentResponseDto = commentService.registerComment(customAdminDetails.getAdminId(), commentRequestDto);
+		CommentResponseDto commentResponseDto = commentService.registerComment(customAdminDetails.getAdminId(), commentRequestDto.estimateId(), commentRequestDto.commentText());
 		
 		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, commentResponseDto));
 	}
 	
 //  견적의 댓글 목록 조회 
 	@PreAuthorize("hasRole('ADMIN')")
-	@GetMapping("/private/estimate/{estimateId}")
+	@GetMapping("/private/{estimateId}")
 	public ResponseEntity<ApiResponseDto<List<CommentResponseDto>>> getCommentList(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@PathVariable("estimateId") int encodedEstimateId) {
@@ -62,19 +63,19 @@ public class CommentController {
 	}
 	
 //  댓글 수정
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/private/{commentId}")
-	public ResponseEntity<ApiResponseDto<Void>> updateComment(
+	public ResponseEntity<ApiResponseDto<CommentResponseDto>> updateComment(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 
 			@PathVariable("commentId") int encodedCommentId, 
-			@Valid @RequestBody CommentRequestDto commentRequestDto) {
+			@RequestBody Map<String, String> requestBody) {
 		
-		commentService.updateComment(encodedCommentId, commentRequestDto, customAdminDetails.getAdminId());
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS));
+		CommentResponseDto commentResponseDto = commentService.updateComment(encodedCommentId, requestBody.get("commentText"), customAdminDetails.getAdminId());
+		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS,commentResponseDto));
 	}
 	
 //  댓글 삭제
-	@PreAuthorize("hasRole('OAUTH') or hasRole('LOCAL')")
+	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/private/{commentId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteComment(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, 

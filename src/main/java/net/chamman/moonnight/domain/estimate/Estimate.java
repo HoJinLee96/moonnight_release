@@ -55,13 +55,13 @@ public class Estimate {
 	@Column(name = "phone_agree")
 	private boolean phoneAgree;
 
-	@Column(name = "postcode", length = 10, nullable = false)
+	@Column(name = "postcode", length = 10)
 	private String postcode;
 
 	@Column(name = "main_address", length = 255, nullable = false)
 	private String mainAddress;
 
-	@Column(name = "detail_address", length = 255, nullable = false)
+	@Column(name = "detail_address", length = 255)
 	private String detailAddress;
 
 	@Column(name = "cleaning_service", length = 30, nullable = false)
@@ -91,18 +91,23 @@ public class Estimate {
 	private LocalDateTime updatedAt;
 
 	public enum CleaningService {
+		// 주거 및 단건 청소
 		NEW_BUILDING("신축 청소"), 
 		MOVING("이사 청소"), 
 		RESIDENTIAL("거주 청소"), 
 		REMODELING("리모델링 청소"),
 		COMPLETION("준공 청소"),
+
+		// 상업/시설 단건 청소
 		SHOP("상가 청소"), 
-		LARGE("대형 청소"), 
 		OFFICE("사무실 청소"), 
 		BUILDING("건물 청소"), 
 		STAIR("계단 청소"), 
 		TOILET("화장실 청소"),
-		ACADEMY("학원 청소"), 
+		ACADEMY("학원 청소"),
+		LARGE("대형 청소"),
+
+		// 정기 청소
 		STAIR_REGULAR("계단 정기청소"), 
 		SHOP_REGULAR("상가 정기청소"), 
 		OFFICE_REGULAR("사무실 정기청소"),
@@ -122,7 +127,21 @@ public class Estimate {
 	}
 
 	public enum EstimateStatus {
-		RECEIVE, IN_PROGRESS, COMPLETE, DELETE
+	    ALL("전체"),
+	    RECEIVE("접수"),
+	    IN_PROGRESS("처리중"),
+	    COMPLETE("완료"),
+	    DELETE("삭제");
+
+	    private final String label;
+
+	    EstimateStatus(String label) {
+	        this.label = label;
+	    }
+
+	    public String getLabel() {
+	        return label;
+	    }
 	}
 
 	public void updateEstimate(EstimateRequestDto estimateRequestDto, List<String> imagesPath) {

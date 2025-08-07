@@ -360,7 +360,7 @@ public class AdminSignService {
 		log.debug("* Soft Delete Local 회원 탈퇴. AdminId: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.MEDIUM));
 
 		Admin admin = adminService.getActiveAdminByAdminId(adminId);
-		String anonymizedEmail = admin.getEmail() + "_deleted";
+		String anonymizedEmail = admin.getEmail() + "_" + adminId +"_deleted";
 		admin.setEmail(anonymizedEmail);
 		admin.setAdminStatus(AdminStatus.DELETE);
 		admin.setName("탈퇴한사용자");

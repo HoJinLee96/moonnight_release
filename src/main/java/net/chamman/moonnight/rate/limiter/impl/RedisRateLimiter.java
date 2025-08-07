@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.exception.TooManyRequestsException;
 import net.chamman.moonnight.rate.limiter.RateLimiter;
 
@@ -33,7 +33,7 @@ public class RedisRateLimiter implements RateLimiter {
 		}
 
 		if (reqCount > maxCount) {
-			String clientIp = RequestContextHolder.getContext().getClientIp();
+			String clientIp = CustomRequestContextHolder.getClientIp();
 			log.warn("* TooManyRequestsException발생. clientIp: [{}]",clientIp);
 			throw new TooManyRequestsException(TOO_MANY_REQUEST, "요청 횟수 초과.");
 		}

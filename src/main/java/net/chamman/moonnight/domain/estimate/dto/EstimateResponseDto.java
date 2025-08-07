@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.Builder;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.estimate.Estimate;
+import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 
 @Builder
@@ -38,7 +39,7 @@ public record EstimateResponseDto(
     .postcode(estimate.getPostcode())
     .mainAddress(estimate.getMainAddress())
     .detailAddress(estimate.getDetailAddress())
-    .cleaningService(estimate.getCleaningService())
+    .cleaningService(CleaningService.valueOf(estimate.getCleaningService()).getLabel())
     .content(estimate.getContent())
     .images(estimate.getImagesPath())
     .estimateStatus(estimate.getEstimateStatus())

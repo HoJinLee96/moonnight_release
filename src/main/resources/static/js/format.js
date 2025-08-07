@@ -4,40 +4,57 @@ import {validate, ValidationError} from '/js/validate.js';
  * input 요소에 실시간으로 전화번호 형식(010-1234-5678)을 적용합니다.
  * @param {HTMLInputElement} inputElement - 형식을 적용할 input 요소
  */
-export function initPhoneFormatting(inputElement) {
-	if (!inputElement) return;
+function handlePhoneFormatting(e) {
+	const rawValue = e.target.value.replace(/\D/g, '').substring(0, 11); // 길이를 11자로 제한
+	const length = rawValue.length;
 
-	inputElement.addEventListener('input', (e) => {
-		const rawValue = e.target.value.replace(/\D/g, '').substring(0, 12);
-		const length = rawValue.length;
+	let formattedValue = '';
 
-		let formattedValue = '';
-
-		// 길이에 따라 하이픈(-)을 추가합니다.
+	// 02로 시작하는 서울 번호 특별 처리
+	if (rawValue.startsWith('02')) {
+		if (length <= 2) {
+			formattedValue = rawValue;
+		} else if (length <= 6) {
+			formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2)}`;
+		} else if (length <= 10) {
+			formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 6)}-${rawValue.substring(6)}`;
+		} else {
+            formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 6)}-${rawValue.substring(6, 10)}`;
+        }
+	} else { // 그 외 일반 휴대폰 번호
 		if (length < 4) {
 			formattedValue = rawValue;
 		} else if (length < 8) {
 			formattedValue = `${rawValue.substring(0, 3)}-${rawValue.substring(3)}`;
-		} else if (length < 12) {
-			formattedValue = `${rawValue.substring(0, 3)}-${rawValue.substring(3, 7)}-${rawValue.substring(7)}`;
 		} else {
-			formattedValue = `${rawValue.substring(0, 4)}-${rawValue.substring(4, 8)}-${rawValue.substring(8)}`;
+			formattedValue = `${rawValue.substring(0, 3)}-${rawValue.substring(3, 7)}-${rawValue.substring(7)}`;
 		}
+	}
 
-		if (rawValue.startsWith('02')) {
-			if (length < 3) {
-				formattedValue = rawValue;
-			} else if (length < 7) { 
-				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2)}`;
-			} else if (length < 10) {
-				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 5)}-${rawValue.substring(5)}`;
-			} else if (length < 11) {
-				formattedValue = `${rawValue.substring(0, 2)}-${rawValue.substring(2, 6)}-${rawValue.substring(6)}`;
-			}
-		}
+	e.target.value = formattedValue;
+}
 
-		e.target.value = formattedValue;
-	});
+
+/**
+ * 입력 요소에 휴대폰 번호 포매팅 이벤트 리스너를 '추가'하는 함수
+ * @param {HTMLInputElement} inputElement
+ */
+export function initPhoneFormatting(inputElement) {
+	if (!inputElement) return;
+	// '이름 있는' 함수를 이벤트 리스너로 등록
+	inputElement.addEventListener('input', handlePhoneFormatting);
+	console.log("등록 완료");
+}
+
+/**
+ * 입력 요소에서 휴대폰 번호 포매팅 이벤트 리스너를 '제거'하는 함수
+ * @param {HTMLInputElement} inputElement
+ */
+export function removePhoneFormatting(inputElement) {
+	if (!inputElement) return;
+	// 등록했던 '이름 있는' 함수를 정확히 지정하여 제거
+	inputElement.removeEventListener('input', handlePhoneFormatting);
+	console.log("제거 완료");
 }
 
 /**
@@ -65,11 +82,11 @@ export function initVerificationCodeFormatting(inputElement) {
 }
 
 /**
- * userStatus 값을 한글로 변환하는 헬퍼 함수
+ * adminStatus 값을 한글로 변환하는 헬퍼 함수
  * @param {string} status - e.g., 'ACTIVE', 'SUSPENDED'
  * @returns {string} - e.g., '정상', '정지'
  */
-export function formatUserStatus(status) {
+export function formatAdminStatus(status) {
 	switch (status) {
 		case 'ACTIVE':
 			return '정상';

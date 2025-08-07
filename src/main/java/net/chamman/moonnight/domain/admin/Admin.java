@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
+import org.springframework.data.annotation.Version;
 
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
@@ -57,6 +58,8 @@ public class Admin {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 	
+	@Version
+	Long version;
 	
 	public static enum AdminStatus {
 		ACTIVE, STAY, STOP, DELETE;

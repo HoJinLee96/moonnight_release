@@ -80,7 +80,7 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createAccessToken} 토큰 생성 실패
 	 */
 	private String createAccessToken(int adminId, List<String> roles, Map<String, Object> claims) {
-		log.debug("* AccessToken 발행. adminId: [{}], roles: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.MEDIUM), roles.get(0));
+		log.debug("* AccessToken 발행. adminId: [{}], roles: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.NONE), roles.get(0));
 		
 		try {
 			JwtBuilder builder = Jwts.builder()
@@ -113,7 +113,7 @@ public class JwtProvider {
 	 * @throws CreateJwtException {@link #createRefreshToken} 토큰 생성 실패
 	 */
 	private String createRefreshToken(int adminId) {
-		log.debug("* RefreshToken 발행. adminId: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.MEDIUM));
+		log.debug("* RefreshToken 발행. adminId: [{}]", LogMaskingUtil.maskId(adminId, MaskLevel.NONE));
 		
 		try {
 			return Jwts.builder()
@@ -135,8 +135,8 @@ public class JwtProvider {
 	 */
 	public String createAuthToken(String verificationId, String recipient) {
 		log.debug("* AuthToken 발행. VerificationId: [{}], recipient: [{}]", 
-				LogMaskingUtil.maskId(verificationId, MaskLevel.MEDIUM),
-				LogMaskingUtil.maskRecipient(recipient, MaskLevel.MEDIUM)
+				LogMaskingUtil.maskId(verificationId, MaskLevel.NONE),
+				LogMaskingUtil.maskRecipient(recipient, MaskLevel.NONE)
 				);
 		
 		try {
@@ -147,7 +147,7 @@ public class JwtProvider {
 					.setExpiration(new Date(System.currentTimeMillis() + expiration30Minute))
 					.signWith(authHmacShaKey, SignatureAlgorithm.HS256)
 					.claim("recipient", aesProvider.encrypt(recipient))
-					.claim("roles",List.of("RULE_AUTH"))
+					.claim("roles",List.of("ROLE_AUTH"))
 					.compact();
 			
 		} catch (Exception e) {
@@ -164,7 +164,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateAccessToken} JWT 파싱 실패
 	 */
 	public Map<String, Object> validateAccessToken(String token) {
-		log.debug("* AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* AccessToken 검증. AccessToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.NONE));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -189,7 +189,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateRefreshToken} JWT 파싱 실패
 	 */
 	public String validateRefreshToken(String token) {
-		log.debug("* RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* RefreshToken 검증. RefreshToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.NONE));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -215,7 +215,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #validateAuthToken} JWT 파싱 실패
 	 */
 	public Map<String, Object> validateAuthToken(String token) {
-		log.debug("* AuthToken 검증. AuthToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.MEDIUM));
+		log.debug("* AuthToken 검증. AuthToken: [{}]", LogMaskingUtil.maskToken(token, MaskLevel.NONE));
 		
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -240,7 +240,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 */
 	public long getAccessTokenRemainingTime(String accessToken) {
-		log.debug("* AccessToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM));
+		log.debug("* AccessToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(accessToken, MaskLevel.NONE));
 
 		try {
 			Claims claims = Jwts.parserBuilder()
@@ -266,7 +266,7 @@ public class JwtProvider {
 	 * @throws ValidateJwtException {@link #getSignJwtRemainingTime} JWT 파싱 실패
 	 */
 	public long getAuthTokenRemainingTime(String authToken) {
-		log.debug("* AuthToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(authToken, MaskLevel.MEDIUM));
+		log.debug("* AuthToken 토큰 유효시간 검증. Token: [{}]", LogMaskingUtil.maskToken(authToken, MaskLevel.NONE));
 
 		try {
 			Claims claims = Jwts.parserBuilder()

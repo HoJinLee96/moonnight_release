@@ -30,4 +30,8 @@ public interface AdminRepository extends JpaRepository<Admin, Integer> {
 	Optional<Admin> findByEmailAndAdminStatusNot(@Param("email") String email,
 			@Param("adminStatus") AdminStatus adminStatus);
 	
+	@Query("SELECT u FROM Admin u WHERE u.phone = :phone AND u.adminStatus <> :adminStatus")
+	Optional<Admin> findByPhoneAndAdminStatusNot(@Param("phone") String phone,
+			@Param("adminStatus") AdminStatus adminStatus);
+	
 }

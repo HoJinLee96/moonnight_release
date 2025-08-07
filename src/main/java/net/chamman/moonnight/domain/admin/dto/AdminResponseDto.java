@@ -14,7 +14,8 @@ public record AdminResponseDto(
 		String phone,
 		AdminStatus adminStatus,
 		LocalDateTime createdAt,
-		LocalDateTime updatedAt
+		LocalDateTime updatedAt,
+		Long version
 		
 		) 
 {
@@ -27,6 +28,7 @@ public record AdminResponseDto(
 				.adminStatus(admin.getAdminStatus())
 				.createdAt(admin.getCreatedAt())
 				.updatedAt(admin.getUpdatedAt())
+				.version(admin.getVersion())
 				.build();
 	}
 }

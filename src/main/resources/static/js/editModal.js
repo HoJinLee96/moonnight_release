@@ -12,12 +12,14 @@ import { initPhoneFormatting, initVerificationCodeFormatting } from '/js/format.
  * @param {object} config - 페이지별 설정을 담은 객체
  * @param {function} config.updateApiFunction - '저장' 시 호출할 API 함수
  * @param {function} config.onSaveSuccess - 저장 성공 후 실행할 콜백 함수
+ * @param {function} config.modalOverlayParents - 저장 성공 후 실행할 콜백 함수
  */
 export function openEditModal(estimateData, config) {
 	// --- 2. 상태 관리 변수 (원본 데이터를 복사해서 사용) ---
 	const editState = JSON.parse(JSON.stringify(estimateData));
 	let isPhoneVerifiedInModal = !!editState.phoneAgree;
 	let isEmailVerifiedInModal = !!editState.emailAgree;
+	console.log(editState);
 
 	// --- 3. 모달 HTML 동적 생성 ---
 	const modalOverlay = document.createElement('div');
@@ -80,20 +82,22 @@ export function openEditModal(estimateData, config) {
 			            </form>
 			        </div>
 			    `;
-	document.body.appendChild(modalOverlay);
+	config.modalOverlayParents.appendChild(modalOverlay);
 
 	// --- 4. 모달 내부 로직  ---
-
-	// 서비스 선택 드롭다운 채우기
+	
+	// 서비스 select 채우기
 	const serviceSelect = modalOverlay.querySelector('#edit-cleaningService');
-	const services = ['신축청소', '입주청소', '거주청소', '리모델링청소', '준공청소', '상가청소', '오피스청소', '기타'];
-	services.forEach(s => {
-		let option;
-		option = new Option(`${s}`, s);
-		if (s === editState.cleaningService) option.selected = true;
-		serviceSelect.add(option);
+	window.cleaningServices.forEach(service => {
+		const option = document.createElement('option');
+		option.value = service.name; // NEW_BUILDING 같은 enum name
+		option.textContent = service.label; // 신축 청소 등 한글 레이블
+		if (service.label === editState.cleaningService) {
+			option.selected = true;
+		}
+		serviceSelect.appendChild(option);
 	});
-
+	
 	// 주소 채우기 
 	const editPostcode = modalOverlay.querySelector('#edit-postcode');
 	const editMainAddress = modalOverlay.querySelector('#edit-mainAddress');
@@ -257,9 +261,11 @@ export function openEditModal(estimateData, config) {
 			// 설정으로 넘겨받은 API 함수를 호출!
 			const json = await config.updateApiFunction(editState.estimateId, formData);
 
-			document.body.removeChild(modalOverlay);
+			console.log("서버로부터 받은 응답(json):", json); 
+			
+			config.modalOverlayParents.removeChild(modalOverlay);
 
-			// [★★핵심★★] 설정으로 넘겨받은 콜백 함수를 실행!
+			// 설정으로 넘겨받은 콜백 함수를 실행!
 			if (config.onSaveSuccess) {
 				config.onSaveSuccess(json.data);
 			}
@@ -275,7 +281,7 @@ export function openEditModal(estimateData, config) {
 
 	// '취소' 버튼 이벤트 리스너
 	modalOverlay.querySelector('#cancel-edit').addEventListener('click', () => {
-		document.body.removeChild(modalOverlay);
+		config.modalOverlayParents.removeChild(modalOverlay);
 	});
 
 	// '저장' 버튼 이벤트 리스너

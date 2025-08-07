@@ -27,9 +27,8 @@ import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.token.JwtProvider;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
-import net.chamman.moonnight.global.context.RequestContext;
-import net.chamman.moonnight.global.context.RequestContextHolder;
 import net.chamman.moonnight.global.exception.jwt.TimeOutJwtException;
+import net.chamman.moonnight.global.security.principal.TokenAuthenticator;
 import net.chamman.moonnight.global.util.ClientIpExtractor;
 import net.chamman.moonnight.global.util.CookieUtil;
 
@@ -39,10 +38,11 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 
 	protected final JwtProvider jwtProvider;
 	protected final TokenProvider tokenProvider;
-	protected final AdminSignLogService signLogService;
-	protected final AdminSignService signService;
+	protected final AdminSignLogService adminSignLogService;
+	protected final AdminSignService adminSignService;
+	protected final TokenAuthenticator tokenAuthenticator;
 
-	protected abstract T buildAdminDetails(String accessToken);
+	protected abstract T buildDetails(String accessToken);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain)
@@ -55,9 +55,6 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 		// Mobile Or Web
 		String clientType = req.getHeader("X-Client-Type");
 		boolean isMobileApp = clientType != null && clientType.contains("mobile");
-
-		RequestContext requestContext = new RequestContext(clientIp, isMobileApp);
-		RequestContextHolder.setContext(requestContext);
 
 		String accessToken = getAccessToken(isMobileApp, req);
 		String refreshToken = getRefreshToken(isMobileApp, req);
@@ -151,7 +148,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 	protected void refresh(String refreshToken, String clientIp, HttpServletResponse res, boolean isMobileApp) {
 		log.debug("* Refresh 진행.");
 
-		Map<String, String> newTokens = signService.refresh(refreshToken, clientIp);
+		Map<String, String> newTokens = adminSignService.refresh(refreshToken, clientIp);
 		// 새로운 토큰 Set Response
 		setTokenToResponse(newTokens, res, isMobileApp);
 		// 새로운 토큰 통해 SetAuthentication
@@ -189,7 +186,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 	}
 
 	protected void setAuthentication(String accessToken) {
-		T adminDetails = buildAdminDetails(accessToken);
+		T adminDetails = buildDetails(accessToken);
 		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(adminDetails, null,
 				adminDetails.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(authentication);

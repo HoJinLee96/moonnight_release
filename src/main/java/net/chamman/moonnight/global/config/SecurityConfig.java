@@ -1,32 +1,19 @@
 package net.chamman.moonnight.global.config;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.chamman.moonnight.global.security.fillter.JwtAuthFilter;
 import net.chamman.moonnight.global.security.fillter.JwtFilter;
 
 @Configuration
@@ -36,124 +23,110 @@ import net.chamman.moonnight.global.security.fillter.JwtFilter;
 public class SecurityConfig {
 
 	private final JwtFilter jwtFilter;
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final JwtAuthFilter jwtAuthFilter;
 
-	@Value("${naver-login.clientId}")
-	private String naverClientId;
-	@Value("${naver-login.clientSecret}")
-	private String naverClientSecret;
-	@Value("${naver-login.redirectUri}")
-	private String naverRedirectUri;
+	public static final String[] STATIC_RESOURCES = {"/css/**", "/js/**", "/images/**", "/favicon.ico", "/v3/api-docs/**", "/swagger-ui/**",
+			"/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/openapi.yaml", "/.well-known/**"};
 
-	@Value("${kakao-api.restApiKey}")
-	private String kakaoClientId;
-	@Value("${kakao-api.clientSecret}")
-	private String kakaoClientSecret;
-	@Value("${kakao-login.redirectUri}")
-	private String kakaoRedirectUri;
+	// 관리자 로그인/회원가입 등 인증이 필요 없는 경로
+	public static final String[] PUBLIC_ADMIN_URLS = { 
+			"/admin/signIn", 
+			"/admin/signUp1", 
+			"/admin/signUp2", 
+			"/admin/sign/stay", 
+			"/admin/sign/stop", 
+			"/admin/sign/delete", 
+			"/admin/find/email",
+			"/admin/find/password"
+			// 기타 필요한 public 관리자 경로 추가
+	};
 
-	// 누구나 접근 가능
-	public static final String[] PUBLIC_URIS = { "/api/*/public/**", "/", "/home", "/estimate", "/estimate/**",
-			"/review", "/verify/**", "/sign/*" };
+	// 관리자 인증이 필요한 모든 경로 (PUBLIC_ADMIN_URLS 제외)
+	public static final String[] ADMIN_URLS = { "/admin/**", "/api/admin/*/private/**" };
 
-	// 로그인 하면 안 되는 접근
-	public static final String[] NON_SIGNIN_ONLY_URIS = { "/signin", "/signinBlank", "/signup*", "/signup/**",
-			"/find/**", "/update/password/blank" };
-
-	// 로그인 안 하면 안 되는 접근
-	public static final String[] SIGNIN_ONLY_URIS = { "/my", "/my/**" };
+	// 사용자 인증이 필요한 특정 경로
+	public static final String[] USER_PRIVATE_URLS = { "/api/estimate/private/auth", "/api/estimate/private/auth/**",
+			"/api/sign/private/out/auth" };
 
 	// 모든 접근 허용
-	@Bean
-	@Order(0)
-	public SecurityFilterChain staticFilterChain(HttpSecurity http) throws Exception {
-		log.debug("* staticFilterChain() @Order(0) 필터 적용.");
+    @Bean
+    @Order(0)
+    public SecurityFilterChain staticResourceFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(STATIC_RESOURCES) // 이 경로들에 대해서만 동작
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()) // 모든 요청 허용
+            .csrf(AbstractHttpConfigurer::disable) // CSRF 보호 비활성화
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 세션 사용 안함
 
-		http.securityMatcher("/css/**", "/js/**", "/images/**", "/favicon.ico", "/v3/api-docs/**", "/swagger-ui/**",
-				"/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/openapi.yaml", "/.well-known/**")
-				.csrf(AbstractHttpConfigurer::disable)
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(authz -> authz.anyRequest().permitAll());
+        return http.build();
+    }
 
-		return http.build();
-	}
+	// 관리자 ROLE_ADMIN
+    @Bean
+    @Order(1)
+    public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(ADMIN_URLS) // 관리자 경로에 대해서만 동작
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(PUBLIC_ADMIN_URLS).permitAll() // 로그인/회원가입 등은 허용
+                .anyRequest().authenticated() // 그 외 모든 관리자 경로는 인증 필요
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // JwtFilter 적용
 
-	// 관리자
-	@Bean
-	@Order(2)
-	public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-		log.debug("* apiSecurityFilterChain() @Order(2) 필터 적용.");
-		http.securityMatcher("/admin/**", "/api/admin/**").csrf(AbstractHttpConfigurer::disable)
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
 
-		return http.build();
-	}
+	// ROLE_AUTH 전용
+    @Bean
+    @Order(2)
+    public SecurityFilterChain userPrivateFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(USER_PRIVATE_URLS) // 특정 사용자 API 경로에 대해서만 동작
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated()) // 모든 요청 인증 필요
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // JwtAuthFilter 적용
 
-	// AccessDeniedHandler 빈 정의: 권한 없는 사용자 처리
-	@Bean
-	public AccessDeniedHandler accessDeniedHandler() {
-//		return (request, response, accessDeniedException) -> {
-//			response.sendRedirect(request.getContextPath() + "/home"); // 홈으로 보내버리기!
-//		};
-		return new CustomAccessDeniedHandler();
-	}
+        return http.build();
+    }
+    
+    @Bean
+    @Order(3)
+    public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
+        http
+            // securityMatcher를 설정하지 않으면 모든 요청이 이 필터 체인의 대상이 됨
+            // (단, 위에서 먼저 처리된 요청들은 제외)
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()); // 나머지 모든 요청은 허용
 
-	public class CustomAccessDeniedHandler implements AccessDeniedHandler {
-		@Override
-		public void handle(HttpServletRequest request, HttpServletResponse response,
-				AccessDeniedException accessDeniedException) throws IOException {
-			log.debug("* CustomAccessDeniedHandler 실행됨.");
+        return http.build();
+    }
 
-			String clientType = request.getHeader("X-Client-Type");
-			boolean isMobileApp = clientType != null && clientType.contains("mobile");
+    /**
+     * JwtFilter가 자동으로 서블릿 컨테이너에 등록되는 것을 방지합니다.
+     * 이렇게 하면 우리가 SecurityFilterChain에 명시적으로 추가한 필터만 동작하게 됩니다.
+     * @param filter JwtFilter 빈
+     * @return FilterRegistrationBean
+     */
+    @Bean
+    public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter filter) {
+        FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false); // 자동 등록 비활성화
+        return registration;
+    }
 
-			if (isMobileApp) {
-				response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-				response.setContentType("application/json;charset=UTF-8");
-				Map<String, Object> body = Map.of("statusCode", 403, "message", "접근 권한이 없습니다.");
-				response.getWriter().write(objectMapper.writeValueAsString(body));
-			} else {
-				response.sendRedirect("/home");
-			}
-		}
-	}
-
-	// AuthenticationEntryPoint 빈 정의: 인증 안된 사용자 리다이렉트
-	@Bean
-	public AuthenticationEntryPoint authenticationEntryPoint() {
-		return new CustomAuthenticationEntryPoint();
-	}
-
-	public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
-		@Override
-		public void commence(HttpServletRequest request, HttpServletResponse response,
-				AuthenticationException authException) throws IOException {
-			log.debug("* AuthenticationEntryPoint 실행됨.");
-
-			String clientType = request.getHeader("X-Client-Type");
-			boolean isMobileApp = clientType != null && clientType.contains("mobile");
-
-			if (isMobileApp) {
-				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
-				response.setContentType("application/json;charset=UTF-8");
-				Map<String, Object> body = Map.of("statusCode", 401, "message", "로그인이 필요합니다.");
-				response.getWriter().write(objectMapper.writeValueAsString(body));
-			} else {
-				String uri = request.getRequestURI();
-				String url = request.getRequestURL().toString();
-				String queryString = request.getQueryString();
-				String fullUrl = url + (queryString != null ? "?" + queryString : "");
-				String encodedUrl = Base64.getEncoder().encodeToString(fullUrl.getBytes(StandardCharsets.UTF_8));
-
-				if (Arrays.stream(SIGNIN_ONLY_URIS).anyMatch(uri::startsWith)) {
-					response.sendRedirect("/signin?redirect=" + encodedUrl);
-				} else {
-					response.sendRedirect("/error/400");
-				}
-			}
-		}
-	}
-
+    /**
+     * JwtAuthFilter가 자동으로 서블릿 컨테이너에 등록되는 것을 방지합니다.
+     * @param filter JwtAuthFilter 빈
+     * @return FilterRegistrationBean
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilterRegistration(JwtAuthFilter filter) {
+        FilterRegistrationBean<JwtAuthFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false); // 자동 등록 비활성화
+        return registration;
+    }
 }

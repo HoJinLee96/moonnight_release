@@ -1,6 +1,7 @@
 package net.chamman.moonnight.view;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.token.JwtProvider;
 import net.chamman.moonnight.auth.token.TokenProvider;
+import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
 import net.chamman.moonnight.domain.estimate.EstimateService;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.global.util.CookieUtil;
@@ -30,13 +32,15 @@ public class EstimateViewController {
 	private final JwtProvider jwtProvider;
 
 	@GetMapping("/estimate/register")
-	public String showEstimate() {
+	public String showEstimate(Model model) {
+		model.addAttribute("cleaningServices", CleaningService.values());
+
 		return "estimate/estimateRegister";
 	}
 
 	@GetMapping("/estimate/search")
 	public String showEstimateSearch(HttpServletRequest req, HttpServletResponse res, Model model) {
-		String authToken = null ;
+		String authToken = null;
 		Cookie cookie = WebUtils.getCookie(req, "X-Auth-Token");
 		if (cookie != null) {
 			authToken = cookie.getValue();
@@ -57,7 +61,16 @@ public class EstimateViewController {
 		String recipient = (String) claims.get("recipient");
 		List<EstimateResponseDto> list = estimateService.getEstimateResponseDtoListByAuth(recipient);
 		model.addAttribute("estimateList", list);
+
+		List<CleaningServiceDto> cleaningServices = Arrays.stream(CleaningService.values())
+				.map(e -> new CleaningServiceDto(e.name(), e.getLabel())).toList();
+
+		model.addAttribute("cleaningServices", cleaningServices);
+
 		return "estimate/estimateSearch";
+	}
+
+	public record CleaningServiceDto(String name, String label) {
 	}
 
 }

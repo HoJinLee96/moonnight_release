@@ -17,8 +17,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.adminSign.AdminSignService;
-import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.adminSign.log.AdminSignLog.SignResult;
+import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
 import net.chamman.moonnight.auth.token.dto.FindAdminPwTokenDto;
@@ -170,8 +170,7 @@ public class AdminService {
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 		verificationPhoneTokenDto.comparePhone(phone);
 
-		Admin admin = adminRepository.findByPhone(phone).filter((a) -> a.getAdminStatus() != AdminStatus.DELETE)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
+		Admin admin = adminRepository.findByPhoneAndAdminStatusNot(phone, AdminStatus.DELETE).orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
 
 		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 		return AdminResponseDto.fromEntity(admin);
@@ -444,7 +443,7 @@ public class AdminService {
 	public void isPhoneExists(String phone) {
 		log.debug("* 휴대폰 중복 검사. phone: {}", LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM));
 
-		Optional<Admin> existAdminProvider = adminRepository.findByEmailAndAdminStatusNot(phone,
+		Optional<Admin> existAdminProvider = adminRepository.findByPhoneAndAdminStatusNot(phone,
 				AdminStatus.DELETE);
 		if (existAdminProvider.isPresent()) {
 			throw new DuplicationException(PHONE_ALREADY_EXISTS);

@@ -4,7 +4,7 @@ import { validate, ValidationError } from '/js/validate.js';
  * 견적서 FormData의 유효성을 검사하는 비동기 함수
  * @param {FormData} formData - 서버로 보낼 FormData 객체
  */
-async function validateFormData(formData) {
+export async function validateFormData(formData) {
 	// 1. FormData에서 DTO와 파일들을 추출
 	const dtoBlob = formData.get('estimateRequestDto'); // 백엔드와 맞춘 DTO 키
 	const imageFiles = formData.getAll('images');      // 백엔드와 맞춘 파일 키
@@ -17,7 +17,7 @@ async function validateFormData(formData) {
 	const dto = JSON.parse(await dtoBlob.text());
 
 	// 3. validate.js의 validate 함수를 사용하여 각 필드 검증
-	validate('name', dto.name);
+	validate('estimateName', dto.name);
 	
 	if (!dto.phoneAgree && !dto.emailAgree) {
 		throw new ValidationError('최소 하나 이상의 수신 방법을 인증해주세요.');
@@ -33,7 +33,6 @@ async function validateFormData(formData) {
 	
 	// 주소 유효성 검사
 	validate('address', dto.mainAddress);
-    validate('address', dto.detailAddress);
 
 
 	// 4. 이미지 개수 검증
@@ -172,28 +171,6 @@ export async function getEstimateByGuest(estimateId, recipient) {
 	}
 }
 
-/**
- * 로그인 유저 견적서를 수정 합니다.
- */
-export async function updateEstimateByUser(estimateId, formData) {
-	
-	await validateFormData(formData);
-
-	const response = await fetch(`/api/estimate/private/update/${estimateId}`, {
-		method: "PATCH", 
-		body: formData
-	});
-
-	if (response.ok) {
-		return await response.json();
-	} else {
-		const json = await response.json();
-		const error = new Error(json.message || '서버 요청에 실패했습니다.'); 
-		error.code = json.code;
-		error.type = "SERVER";
-		throw error;
-	}
-}
 
 /**
  * AUTH TOKEN 통해 견적서를 수정 합니다.

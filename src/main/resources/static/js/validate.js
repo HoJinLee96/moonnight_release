@@ -32,6 +32,11 @@ const validationRules = {
 		emptyMessage: '이름을 입력해주세요.',
 		invalidMessage: '이름에는 특수기호 또는 줄바꿈을 포함할 수 없습니다.'
 	},
+	estimateName: {
+		pattern: /^[가-힣a-zA-Z0-9\s-]+$/,
+		emptyMessage: '이름을 입력해주세요.',
+		invalidMessage: '이름에는 특수기호 또는 줄바꿈을 포함할 수 없습니다.'
+	},
 	birth: {
 		validator: (value) => isValidDate(value),
 		pattern: /^\d{8}$/,

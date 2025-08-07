@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/main/base}">
+
+<head>
+	<title>견적서 조회</title>
+	<style>
+		/* --- 기본 레이아웃 --- */
+		main {
+			padding: 0 50px;
+		}
+
+		.search-container {
+			max-width: 1000px;
+			margin: 50px auto;
+			padding: 40px;
+			border: 1px solid #ddd;
+			border-radius: 10px;
+			background-color: #f9f9f9;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		h2.search-title {
+			text-align: center;
+			margin-bottom: 40px;
+			border-bottom: 2px solid #20367a;
+			padding-bottom: 15px;
+		}
+
+		.results-area {
+			max-width: 1000px;
+			margin: 30px auto;
+		}
+
+		/* --- 상태 박스 --- */
+		.status-box-container {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 30px;
+			gap: 10px;
+		}
+
+		.status-box {
+			flex-grow: 1;
+			background-color: #e9ecef;
+			border-radius: 10px;
+			padding: 20px;
+			text-align: center;
+			cursor: pointer;
+			transition: all 0.3s;
+			border: 2px solid transparent;
+		}
+
+		.status-box:hover,
+		.status-box.active {
+			background-color: #20367a;
+			color: white;
+			transform: translateY(-3px);
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.status-box-title {
+			font-size: 16px;
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+
+		.status-box-count {
+			font-size: 24px;
+			font-weight: bold;
+		}
+
+		/* --- 검색 폼 --- */
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: bold;
+		}
+
+		.form-group input,
+		.form-group select {
+			width: 100%;
+			padding: 9px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			box-sizing: border-box;
+			font-size: 16px;
+		}
+
+		.btn-container {
+			text-align: right;
+		}
+
+		.btn {
+			padding: 10px 25px;
+			background-color: #20367a;
+			color: white;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 16px;
+		}
+
+		.period-group {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+
+		/* --- 결과 리스트 --- */
+		.results-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+		}
+
+		.results-header h3 {
+			margin: 0;
+		}
+
+		.results-header .size-selector label {
+			margin-right: 10px;
+		}
+
+		.results-header .size-selector select {
+			padding: 5px;
+			border-radius: 5px;
+		}
+
+		.estimate-card {
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			margin-bottom: 15px;
+			background-color: #fff;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+			transition: all 0.3s;
+			cursor: pointer;
+			padding: 20px 20px;
+		}
+
+		.estimate-card:hover {
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			transform: translateY(-2px);
+		}
+
+		.no-results {
+			text-align: center;
+			padding: 50px;
+			color: #777;
+		}
+
+		/* --- 페이지네이션 --- */
+		#pagination-container {
+			display: flex;
+			justify-content: center;
+			margin-top: 30px;
+		}
+
+		.pagination {
+			display: flex;
+			list-style: none;
+			padding: 0;
+		}
+
+		.pagination .page-item a {
+			color: #20367a;
+			padding: 8px 12px;
+			border: 1px solid #ddd;
+			text-decoration: none;
+			margin: 0 2px;
+			transition: background-color 0.2s;
+		}
+
+		.pagination .page-item a:hover {
+			background-color: #f0f0f0;
+		}
+
+		.pagination .page-item.active a {
+			background-color: #20367a;
+			color: white;
+			border-color: #20367a;
+		}
+
+		.pagination .page-item.disabled a {
+			color: #ccc;
+			pointer-events: none;
+		}
+
+		/* --- 상세 보기 모달 --- */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			display: none;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.modal-content {
+			background-color: white;
+			padding: 30px;
+			border-radius: 10px;
+			width: 90%;
+			max-width: 600px;
+			max-height: 80vh;
+			overflow-y: auto;
+			position: relative;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+		}
+
+		.modal-close-btn {
+			position: absolute;
+			top: 15px;
+			right: 15px;
+			font-size: 24px;
+			font-weight: bold;
+			cursor: pointer;
+			border: none;
+			background: none;
+		}
+
+		.modal-content h3 {
+			margin-top: 0;
+			border-bottom: 1px solid #eee;
+			padding-bottom: 10px;
+		}
+
+		.modal-details p {
+			margin: 10px 0;
+			line-height: 1.6;
+		}
+
+		.modal-details strong {
+			color: #20367a;
+		}
+
+		.modal-images img {
+			max-width: 100px;
+			margin: 5px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		.card-header h4 {
+			margin: 0px;
+		}
+
+		.status-receive {
+			color: green;
+		}
+
+		.status-in-progress {
+			color: blue;
+		}
+
+		.status-complete {
+			color: grey;
+		}
+
+		.status-delete {
+			color: red;
+		}
+
+		/* editModal.js에서 사용할 스타일 */
+		.edit-modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.7);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1050;
+			/* 상세 모달보다 위에 표시 */
+		}
+
+		.edit-modal-content {
+			background-color: #fff;
+			padding: 30px;
+			border-radius: 8px;
+			width: 90%;
+			max-width: 700px;
+			max-height: 90vh;
+			overflow-y: auto;
+			box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+		}
+
+		/* ... editModal.js에 필요한 다른 스타일들 ... */
+		.form-group-parents {
+			display: flex;
+			gap: 20px;
+		}
+
+		.form-child {
+			flex: 1;
+		}
+
+		.edit-address-first-line {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+			margin-bottom: 5px;
+		}
+
+		.input-with-button {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+		}
+
+		.form-textarea {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+		}
+
+		.edit-image {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+
+		#edit-image-preview {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-top: 10px;
+		}
+
+		.modal-actions {
+			text-align: right;
+			margin-top: 20px;
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+		}
+
+		.detail-images {
+			display: flex;
+			gap: 5px;
+			flex-wrap: wrap;
+		}
+
+		.detail-images img,
+		.image-preview-item img {
+			width: 100px;
+			height: 100px;
+			object-fit: cover;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		#edit-image-preview {
+			display: flex;
+			gap: 5px;
+			flex-wrap: wrap;
+			margin-top: 15px;
+			min-width: 655px;
+		}
+
+		.image-preview-item {
+			position: relative;
+		}
+
+		.image-preview-item button {
+			position: absolute;
+			right: 0px;
+			top: 2px;
+			border: none;
+			background: none;
+			font-size: 15px;
+			color: white;
+			cursor: pointer;
+		}
+
+		.timer {
+			width: 35px;
+			color: red;
+			font-weight: bold;
+			font-size: 14px;
+			padding: 0 10px;
+		}
+
+		.verified-state,
+		.unverified-state {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			justify-content: space-between;
+		}
+
+		.verified-state input {
+			color: #198754;
+			/* 녹색 */
+			font-weight: bold;
+		}
+
+		.card-header {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.estimate-checkbox {
+			transform: scale(1.2);
+			margin-right: 5px;
+		}
+
+		#bulk-action-container {
+			margin-bottom: 15px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.comment-section {
+			margin-top: 20px;
+			padding-top: 20px;
+			border-top: 2px solid #f0f0f0;
+		}
+
+		.comment-list {
+			margin-top: 15px;
+			max-height: 250px;
+			/* 댓글 많아지면 스크롤 생기도록 */
+			overflow-y: auto;
+			padding-right: 10px;
+			/* 스크롤바 공간 확보 */
+		}
+
+		.comment-item {
+			padding: 15px;
+			border-bottom: 1px solid #eee;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.comment-item:last-child {
+			border-bottom: none;
+		}
+
+		.comment-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 8px;
+		}
+
+		.comment-author {
+			font-weight: bold;
+		}
+
+		.comment-actions button {
+			background: none;
+			border: none;
+			cursor: pointer;
+			color: #888;
+			font-size: 13px;
+		}
+
+		.comment-actions button:hover {
+			text-decoration: underline;
+		}
+
+		.comment-body {
+			line-height: 1.5;
+			color: #333;
+		}
+
+		.comment-body textarea {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			resize: vertical;
+		}
+
+		.comment-dates {
+			font-size: 12px;
+			color: #999;
+			margin-top: 8px;
+			text-align: right;
+		}
+
+		.comment-dates .modified-tag {
+			color: #e67e22;
+			font-weight: bold;
+		}
+
+		.comment-form {
+			margin-top: 20px;
+			display: flex;
+			gap: 10px;
+		}
+
+		.comment-form textarea {
+			flex-grow: 1;
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			resize: vertical;
+			min-height: 60px;
+		}
+
+		.comment-form button {
+			padding: 0 20px;
+			flex-shrink: 0;
+			/* 버튼 크기 고정 */
+		}
+		.comment-body p{
+			margin: 0px;
+		}
+	</style>
+</head>
+
+<main layout:fragment="content">
+	<!-- 검색 영역 -->
+	<div class="search-container">
+		<h2 class="search-title">관리자 견적서 조회</h2>
+		<!-- 상태 박스 -->
+		<div class="status-box-container">
+			<div class="status-box" data-status="ALL">
+				<div class="status-box-title">전체</div>
+				<div class="status-box-count" id="count-all">0</div>
+			</div>
+			<div class="status-box" data-status="RECEIVE">
+				<div class="status-box-title">접수</div>
+				<div class="status-box-count" id="count-receive">0</div>
+			</div>
+			<div class="status-box" data-status="IN_PROGRESS">
+				<div class="status-box-title">처리중</div>
+				<div class="status-box-count" id="count-inprogress">0</div>
+			</div>
+			<div class="status-box" data-status="COMPLETE">
+				<div class="status-box-title">완료</div>
+				<div class="status-box-count" id="count-complete">0</div>
+			</div>
+			<div class="status-box" data-status="DELETE">
+				<div class="status-box-title">삭제</div>
+				<div class="status-box-count" id="count-delete">0</div>
+			</div>
+		</div>
+		<!-- 검색 폼 -->
+		<form id="adminEstimateSearchForm" onsubmit="return false;">
+			<!-- ... 기존 검색 폼 필드들은 그대로 ... -->
+			<div class="form-group">
+				<label for="searchKeyword">검색어 (이름 / 연락처)</label>
+				<input type="text" id="searchKeyword" placeholder="검색어를 입력하세요">
+			</div>
+			<div class="form-group">
+				<label for="searchMainAddress">주소</label>
+				<input type="text" id="searchMainAddress" placeholder="주소 입력">
+			</div>
+			<div class="form-group">
+				<label for="searchCleaningService">청소 서비스 유형</label>
+				<select id="searchCleaningService">
+					<option value="">전체</option>
+					<option th:each="service : ${cleaningServiceList}" th:value="${service.name()}"
+						th:text="${service.label}">
+					</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>기간</label>
+				<div class="period-group">
+					<input type="date" id="searchDateFrom">
+					<span>~</span>
+					<input type="date" id="searchDateTo">
+				</div>
+			</div>
+			<div class="btn-container">
+				<button type="submit" class="btn">검색</button>
+			</div>
+		</form>
+	</div>
+
+	<!-- 검색 결과 영역 -->
+	<div class="results-area">
+		<div class="results-header">
+			<h3>검색 결과</h3>
+			<div class="size-selector">
+				<label for="pageSizeSelect">개수:</label>
+				<select id="pageSizeSelect">
+					<option value="10">10개씩</option>
+					<option value="20" selected>20개씩</option>
+					<option value="30">30개씩</option>
+					<option value="40">40개씩</option>
+					<option value="50">50개씩</option>
+				</select>
+			</div>
+		</div>
+
+		<div id="bulk-action-container" style="display: none;">
+			<div>
+				<input type="checkbox" id="select-all-checkbox">
+				<label for="select-all-checkbox" style="margin-left: 5px; font-weight: bold;">전체 선택</label>
+			</div>
+			<button id="bulk-action-btn" class="btn">상태 변경</button>
+		</div>
+
+		<div id="estimate-results-container"></div>
+		<div id="pagination-container"></div>
+	</div>
+
+	<!-- 견적 상세 보기 모달 -->
+	<div id="estimate-detail-modal" class="modal-overlay">
+		<div class="modal-content">
+			<div id="modal-details-content" class="modal-details">
+			</div>
+			<div id="modal-comment-section" class="comment-section">
+			</div>
+		</div>
+	</div>
+</main>
+
+<th:block layout:fragment="script">
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const statusLabels = /*[[${estimateStatuses}]]*/ {};
+		window.cleaningServices = /*[[${cleaningServices}]]*/null;
+		const currentAdminName = /*[[${currentAdminName}]]*/ '현재 관리자';
+
+		/*]]>*/
+	</script>
+
+	<script type="module">
+		import {searchEstimates, getEstimateById, updateEstimate, updateMultipleEstimateStatus, deleteEstimate} from '/js/admin/adminEstimate.js';
+		import {openEditModal} from '/js/editModal.js';
+		import {getCommentsByEstimateId, createComment, updateComment, deleteComment} from '/js/admin/adminComment.js';
+
+
+		// --- 상태 관리 (페이지의 모든 데이터를 관리하는 중앙 저장소) ---
+		const state = {
+			currentPage: 0,
+			totalPages: 0,
+			pageSize: 20,
+			currentStatus: 'RECEIVE',
+			estimates: [], // 현재 페이지의 견적 목록을 저장 (캐시용)
+			selectedIds: new Set(),
+			currentComments: []
+		};
+
+		// --- DOM 요소 (자주 쓰는 HTML 요소를 미리 찾아두기) ---
+		const dom = {
+			searchForm: document.getElementById('adminEstimateSearchForm'),
+			statusBoxes: document.querySelectorAll('.status-box'),
+			resultsContainer: document.getElementById('estimate-results-container'),
+			paginationContainer: document.getElementById('pagination-container'),
+			modal: document.getElementById('estimate-detail-modal'),
+			modalContent: document.getElementById('estimate-detail-modal').querySelector('.modal-content'),
+			pageSizeSelect: document.getElementById('pageSizeSelect'),
+			bulkActionContainer: document.getElementById('bulk-action-container'),
+			bulkActionButton: document.getElementById('bulk-action-btn'),
+			selectAllCheckbox: document.getElementById('select-all-checkbox')
+		};
+
+		// --- 렌더링 함수 (데이터를 화면에 그리는 역할) ---
+		const renderList = (estimates) => {
+			dom.resultsContainer.innerHTML = '';
+			state.selectedIds.clear();
+			dom.selectAllCheckbox.checked = false;
+			if (!estimates || estimates.length === 0) {
+				dom.resultsContainer.innerHTML = "<p class='no-results'>검색 결과가 없습니다.</p>";
+				updateBulkActionUI();
+				return;
+			}
+
+			const formatDate = (dateString) => new Date(dateString).toLocaleString('ko-KR').slice(0, -3);
+			const isCheckboxVisible = ['RECEIVE', 'IN_PROGRESS'].includes(state.currentStatus);
+
+			const listHtml = estimates.map(est => {
+				const statusClass = `status-${est.estimateStatus.toLowerCase().replace('_', '-')}`;
+				return `
+						<div class="estimate-card" data-id="${est.estimateId}">
+							<div class="card-header">
+								<input type="checkbox" class="estimate-checkbox" data-id="${est.estimateId}" 
+									   style="display: ${isCheckboxVisible ? 'inline-block' : 'none'};">
+								<h4 style="cursor: pointer;" class="card-title-clickable">
+									<span class="status-badge ${statusClass}">${statusLabels[est.estimateStatus] || ''}</span>
+									#${est.estimateId} - ${est.cleaningService}
+								</h4>
+							</div>
+							<div class="card-body" style="cursor: pointer;" class="card-body-clickable">
+								<p><strong>이름:</strong> ${est.name}</p>
+								<p><strong>연락처:</strong> ${est.phone}</p>
+								<p><strong>주소:</strong> ${est.mainAddress}</p>
+							</div>
+							<div class="card-footer">
+								<span>신청일: ${formatDate(est.createdAt)}</span>
+							</div>
+						</div>
+					`}).join('');
+			dom.resultsContainer.innerHTML = listHtml;
+			updateBulkActionUI()
+		};
+
+		const renderPagination = () => {
+			dom.paginationContainer.innerHTML = '';
+			if (state.totalPages <= 1) return;
+
+			let paginationHtml = '<ul class="pagination">';
+			const currentPage = state.currentPage;
+			const totalPages = state.totalPages;
+
+			paginationHtml += `<li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
+						<a class="page-link" href="#" data-page="${currentPage - 1}">이전</a>
+					</li>`;
+
+			for (let i = 0; i < totalPages; i++) {
+				paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+							<a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+						</li>`;
+			}
+
+			paginationHtml += `<li class="page-item ${currentPage >= totalPages - 1 ? 'disabled' : ''}">
+						<a class="page-link" href="#" data-page="${currentPage + 1}">다음</a>
+					</li>`;
+
+			paginationHtml += '</ul>';
+			dom.paginationContainer.innerHTML = paginationHtml;
+		};
+
+		const updateStatusCounts = (counts) => {
+			document.getElementById('count-all').textContent = counts.all;
+			document.getElementById('count-receive').textContent = counts.receive;
+			document.getElementById('count-inprogress').textContent = counts.inProgress;
+			document.getElementById('count-complete').textContent = counts.complete;
+			document.getElementById('count-delete').textContent = counts.delete;
+		};
+
+		const renderModal = async (data) => {
+			const safeData = data || {};
+			const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString('ko-KR') : '';
+			const imagesHtml = safeData.images && safeData.images.length > 0
+				? safeData.images.map(imgUrl => `<img src="${imgUrl}" alt="견적 이미지">`).join('')
+				: '<p>첨부된 이미지가 없습니다.</p>';
+			const statusClass = `status-${(safeData.estimateStatus || '').toLowerCase().replace('_', '-')}`;
+			const detailsSection = dom.modalContent.querySelector('#modal-details-content');
+			const commentSection = dom.modalContent.querySelector('#modal-comment-section');
+
+			detailsSection.innerHTML = `
+				<button type="button" class="modal-close-btn">&times;</button>
+				<h3>견적 상세 정보</h3>
+				<div class="modal-details">
+					<p><strong>상태: <span class="${statusClass}">${statusLabels[safeData.estimateStatus] || ''}</span></strong></p>
+					<p><strong>견적 번호:</strong> #${safeData.estimateId ?? ''}</p>
+					<p><strong>신청자:</strong> ${safeData.name ?? ''}</p>
+					<p><strong>연락처:</strong> ${safeData.phone ?? ''}</p>
+					<p><strong>이메일:</strong> ${safeData.email ?? ''}</p>
+					<p><strong>주소:</strong> (${safeData.postcode ?? ''}) ${safeData.mainAddress ?? ''} ${safeData.detailAddress ?? ''}</p>
+					<p><strong>서비스:</strong> ${safeData.cleaningService ?? ''}</p>
+					<p><strong>신청일:</strong> ${formatDate(safeData.createdAt)}</p>
+					<p><strong>내용:</strong><br>${(safeData.content ?? '').replace(/\n/g, '<br>')}</p>
+					<hr>
+					<p><strong>첨부 이미지:</strong></p>
+					<div class="modal-images">${imagesHtml}</div>
+					<div class="detail-actions">
+						<button type="button" class="btn btn-edit">수정</button>
+						<button type="button" class="btn btn-delete">삭제</button>
+					</div>
+				</div>`;
+
+			dom.modalContent.querySelector('.modal-close-btn').addEventListener('click', () => dom.modal.style.display = 'none');
+			dom.modalContent.querySelector('.btn-edit').addEventListener('click', () => {
+				openEditModal(safeData, {
+					updateApiFunction: updateEstimate,
+					onSaveSuccess: (updatedEstimate) => {
+						// 1. 데이터 확인용 로그
+						console.log("onSaveSuccess로 전달된 updatedEstimate:", updatedEstimate);
+
+						dom.modal.style.display = 'none';
+
+						// 2. 방어 코드 추가
+						if (updatedEstimate && updatedEstimate.estimateId) {
+							// 캐시 데이터 업데이트
+							state.estimates = state.estimates.map(item =>
+								item.estimateId === updatedEstimate.estimateId ? updatedEstimate : item
+							);
+						}
+
+						// 목록 다시 그리기 및 상태 카운트 업데이트
+						handleSearch(true); // true를 줘서 현재 페이지를 유지하도록 함
+					},
+					modalOverlayParents: document.body
+				});
+			});
+
+			dom.modalContent.querySelector('.btn-delete').addEventListener('click', () => {
+				handleDelete(safeData.estimateId);
+			});
+
+			commentSection.innerHTML = '<p>댓글 로딩 중...</p>'; // 로딩 표시
+			try {
+				state.currentComments = await getCommentsByEstimateId(safeData.estimateId);
+				renderComments(safeData.estimateId);
+			} catch (error) {
+				console.error("댓글 로딩 실패:", error);
+				// 이제 이 코드는 정상적으로 작동할 것!
+				commentSection.innerHTML = `<p>댓글을 불러오는 중 오류가 발생했습니다.</p>`;
+			}
+
+			dom.modal.style.display = 'flex';
+		};
+
+		/** 댓글 섹션을 그리는 새 함수 */
+		const renderComments = (estimateId) => {
+			const commentSection = dom.modalContent.querySelector('#modal-comment-section');
+			const comments = state.currentComments;
+
+			const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString('ko-KR') : '날짜 정보 없음';
+
+			const commentsHtml = comments.map(comment => {
+				console.log(comment);
+				// isMine 값에 따라 버튼의 표시 여부를 결정
+				const actionButtonsHtml = comment.isMine ? `
+						<div class="comment-actions">
+							<button class="btn-comment-edit">수정</button>
+							<button class="btn-comment-delete">삭제</button>
+						</div>
+					` : '';
+				const authorDisplayName = comment.authorName;
+
+				return `
+							<div class="comment-item" data-comment-id="${comment.commentId}">
+								<div class="comment-header">
+									<span class="comment-author">${authorDisplayName}</span>
+									${actionButtonsHtml}
+								</div>
+								<div class="comment-body">
+									<p>${comment.commentText.replace(/\n/g, '<br>')}</p>
+								</div>
+								<div class="comment-dates">
+									<span>작성: ${formatDate(comment.createdAt)}</span>
+									${comment.updatedAt && comment.createdAt !== comment.updatedAt
+						? ` | <span class="modified-tag">(수정됨)</span> ${formatDate(comment.updatedAt)}`
+						: ''
+					}
+								</div>
+							</div>
+						`;
+			}).join('');
+
+			commentSection.innerHTML = `
+						<h4>관리자 댓글 (${comments.length}개)</h4>
+						<div class="comment-list">${comments.length > 0 ? commentsHtml : '<p>작성된 댓글이 없습니다.</p>'}</div>
+						<form class="comment-form">
+							<textarea name="commentText" placeholder="댓글을 입력하세요..." required></textarea>
+							<button type="submit" class="btn">등록</button>
+						</form>
+					`;
+
+			// 동적으로 생성된 요소들에 이벤트 리스너 연결
+			addCommentEventListeners(estimateId);
+		};
+
+		/** 댓글 관련 이벤트 리스너를 모아둔 함수 */
+		const addCommentEventListeners = (estimateId) => {
+			const commentSection = dom.modalContent.querySelector('#modal-comment-section');
+
+			// 댓글 등록 폼
+			commentSection.querySelector('.comment-form').addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const textarea = e.target.querySelector('textarea[name="commentText"]');
+				const commentText = textarea.value.trim();
+				if (!commentText) return;
+
+				try {
+					const newComment = await createComment({estimateId, commentText});
+					state.currentComments.push(newComment); // 상태 업데이트
+					renderComments(estimateId); // 다시 그리기
+				} catch (error) {
+					alert(`댓글 등록 실패: ${error.message}`);
+				}
+			});
+
+			// 수정, 삭제 버튼 (이벤트 위임)
+			commentSection.querySelector('.comment-list').addEventListener('click', async (e) => {
+				const commentItem = e.target.closest('.comment-item');
+				if (!commentItem) return;
+
+				const commentId = parseInt(commentItem.dataset.commentId, 10);
+				const comment = state.currentComments.find(c => c.commentId === commentId);
+
+				if (!comment || !comment.isMine) {
+					// 수정/삭제 버튼이 없는 댓글의 다른 영역을 클릭했을 때를 대비
+					if (e.target.matches('.btn-comment-edit') || e.target.matches('.btn-comment-delete')) {
+						console.warn("자신의 댓글이 아니므로 수정/삭제할 수 없습니다.");
+					}
+					return;
+				}
+
+				// 수정 버튼 클릭 시
+				if (e.target.matches('.btn-comment-edit')) {
+					handleEditComment(commentItem);
+				}
+				// 삭제 버튼 클릭 시
+				if (e.target.matches('.btn-comment-delete')) {
+					if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+						try {
+							await deleteComment(commentId);
+							state.currentComments = state.currentComments.filter(c => c.commentId !== commentId);
+							renderComments(estimateId);
+						} catch (error) {
+							alert(`댓글 삭제 실패: ${error.message}`);
+						}
+					}
+				}
+			});
+		};
+
+		/** 댓글 수정 UI를 처리하는 함수 */
+		const handleEditComment = (commentItem) => {
+			const commentId = parseInt(commentItem.dataset.commentId, 10);
+			const comment = state.currentComments.find(c => c.commentId === commentId);
+			const bodyDiv = commentItem.querySelector('.comment-body');
+			const originalHtml = bodyDiv.innerHTML; // 원래 내용 저장
+
+			// 수정용 UI로 변경
+			bodyDiv.innerHTML = `
+						<textarea class="edit-comment-textarea">${comment.commentText}</textarea>
+						<div style="text-align: right; margin-top: 5px;">
+							<button class="btn-comment-save btn btn-sm">저장</button>
+							<button class="btn-comment-cancel btn btn-sm btn-secondary">취소</button>
+						</div>
+					`;
+
+			// 저장 버튼 이벤트
+			bodyDiv.querySelector('.btn-comment-save').addEventListener('click', async () => {
+				const newText = bodyDiv.querySelector('.edit-comment-textarea').value.trim();
+				if (!newText || newText === comment.commentText) {
+					bodyDiv.innerHTML = originalHtml; // 변경 없으면 원상복구
+					return;
+				}
+				try {
+					const updatedComment = await updateComment(commentId, newText);
+					// 상태 업데이트
+					const index = state.currentComments.findIndex(c => c.commentId === commentId);
+					if (index !== -1) {
+						state.currentComments[index] = updatedComment;
+					}
+					renderComments(comment.estimateId); // 전체 댓글 다시 그리기
+				} catch (error) {
+					alert(`댓글 수정 실패: ${error.message}`);
+				}
+			});
+
+			// 취소 버튼 이벤트
+			bodyDiv.querySelector('.btn-comment-cancel').addEventListener('click', () => {
+				bodyDiv.innerHTML = originalHtml;
+			});
+		};
+
+		const updateBulkActionUI = () => {
+			const container = dom.bulkActionContainer;
+			const button = dom.bulkActionButton;
+			const allowedStatuses = ['RECEIVE', 'IN_PROGRESS'];
+
+			if (allowedStatuses.includes(state.currentStatus)) {
+				container.style.display = 'flex'; // 컨테이너 보이기
+				button.disabled = state.selectedIds.size === 0; // 선택된게 없으면 버튼 비활성화
+
+				if (state.currentStatus === 'RECEIVE') {
+					button.textContent = `선택 항목 처리중으로 변경 (${state.selectedIds.size}개)`;
+				} else if (state.currentStatus === 'IN_PROGRESS') {
+					button.textContent = `선택 항목 완료로 변경 (${state.selectedIds.size}개)`;
+				}
+			} else {
+				container.style.display = 'none'; // 그 외 상태에선 숨기기
+			}
+		};
+
+		const handleSearch = async (keepPage = false) => {
+			if (!keepPage) {
+				state.currentPage = 0;
+			}
+
+			const getElementValueOrNull = (id) => {
+				const element = document.getElementById(id);
+				const value = element ? element.value.trim() : '';
+				return value === '' ? null : value;
+			};
+
+			const estimateSearchRequestDto = {
+				estimateStatus: state.currentStatus,
+				cleaningService: getElementValueOrNull('searchCleaningService'),
+				searchWord: getElementValueOrNull('searchKeyword'),
+				addressWord: getElementValueOrNull('searchMainAddress'),
+				startDate: getElementValueOrNull('searchDateFrom'),
+				endDate: getElementValueOrNull('searchDateTo'),
+			};
+
+			try {
+				const data = await searchEstimates({
+					estimateSearchRequestDto,
+					page: state.currentPage,
+					size: state.pageSize
+				});
+
+				state.estimates = data.estimateResponseDto;
+				state.totalPages = Math.ceil(data.estimateSearchCount / state.pageSize);
+
+				updateStatusCounts(data.estimateStatusCount);
+				renderList(state.estimates);
+				renderPagination();
+
+			} catch (error) {
+				alert(error.message);
+				console.error('견적 검색 실패:', error);
+			}
+		};
+
+		const handleCardClick = async (e) => {
+			if (e.target.matches('.estimate-checkbox')) {
+				return;
+			}
+
+			const card = e.target.closest('.estimate-card');
+			if (!card) return;
+
+			const estimateId = parseInt(card.dataset.id, 10);
+			const estimate = state.estimates.find(est => est.estimateId === estimateId);
+
+			if (estimate) {
+				renderModal(estimate);
+			} else {
+				try {
+					const detailedEstimate = await getEstimateById(estimateId);
+					renderModal(detailedEstimate);
+				} catch (error) {
+					alert(error.message);
+				}
+			}
+		};
+
+		const handleCheckboxChange = (e) => {
+			if (!e.target.matches('.estimate-checkbox')) return;
+
+			const checkbox = e.target;
+			const id = parseInt(checkbox.dataset.id, 10);
+
+			if (checkbox.checked) {
+				state.selectedIds.add(id);
+			} else {
+				state.selectedIds.delete(id);
+			}
+
+			// '전체 선택' 체크박스 상태 업데이트
+			const allCheckboxes = document.querySelectorAll('.estimate-checkbox');
+			const allChecked = allCheckboxes.length > 0 && Array.from(allCheckboxes).every(cb => cb.checked);
+			dom.selectAllCheckbox.checked = allChecked;
+
+			updateBulkActionUI(); // 버튼 상태 업데이트
+		};
+
+		/** 8. 전체 선택 체크박스 로직 */
+		const handleSelectAll = (e) => {
+			const allCheckboxes = document.querySelectorAll('.estimate-checkbox');
+			allCheckboxes.forEach(checkbox => {
+				checkbox.checked = e.target.checked;
+				const id = parseInt(checkbox.dataset.id, 10);
+				if (e.target.checked) {
+					state.selectedIds.add(id);
+				} else {
+					state.selectedIds.delete(id);
+				}
+			});
+			updateBulkActionUI();
+		};
+
+		/** 9. 일괄 변경 버튼 클릭 로직 */
+		const handleBulkUpdate = async () => {
+			if (state.selectedIds.size === 0) return;
+
+			const estimateStatus = state.currentStatus === 'RECEIVE' ? 'IN_PROGRESS' : 'COMPLETE';
+			const estimateStatusLabel = statusLabels[estimateStatus];
+			const idsToUpdate = Array.from(state.selectedIds);
+			console.log(idsToUpdate);
+			console.log(estimateStatus);
+			if (confirm(`${idsToUpdate.length}개의 견적을 '${estimateStatusLabel}' 상태로 변경하시겠습니까?`)) {
+				try {
+					await updateMultipleEstimateStatus(idsToUpdate, estimateStatus);
+					alert('상태가 성공적으로 변경되었습니다.');
+					handleSearch(true); // 현재 페이지에서 목록 새로고침
+				} catch (error) {
+					alert(`상태 변경 실패: ${error.message}`);
+				}
+			}
+		};
+
+		const setDefaultDates = () => {
+			const toDate = new Date();
+			const fromDate = new Date();
+			fromDate.setMonth(toDate.getMonth() - 2);
+			const toISO = (date) => date.toISOString().split('T')[0];
+			document.getElementById('searchDateTo').value = toISO(toDate);
+			document.getElementById('searchDateFrom').value = toISO(fromDate);
+		};
+
+		// 4. 삭제 처리 함수 수정
+		const handleDelete = async (estimateId) => {
+			if (confirm('정말로 이 견적서를 삭제하시겠습니까?')) {
+				try {
+					await deleteEstimate(estimateId);
+					alert('삭제되었습니다.');
+					dom.modal.style.display = 'none'; // 상세 모달 닫기
+					handleSearch(true); // 현재 페이지에서 목록 새로고침
+				} catch (error) {
+					alert(error.message);
+				}
+			}
+		}
+
+		// --- 초기화 (페이지가 처음 로드될 때 실행되는 함수) ---
+		const init = () => {
+			document.querySelector(`.status-box[data-status="${state.currentStatus}"]`).classList.add('active');
+			dom.pageSizeSelect.value = state.pageSize;
+			setDefaultDates();
+
+			dom.searchForm.addEventListener('submit', (e) => {
+				e.preventDefault();
+				handleSearch();
+			});
+
+			dom.statusBoxes.forEach(box => {
+				box.addEventListener('click', () => {
+					dom.statusBoxes.forEach(b => b.classList.remove('active'));
+					box.classList.add('active');
+					state.currentStatus = box.dataset.status;
+					handleSearch();
+				});
+			});
+
+			dom.pageSizeSelect.addEventListener('change', (e) => {
+				state.pageSize = parseInt(e.target.value, 10);
+				handleSearch();
+			});
+
+			dom.paginationContainer.addEventListener('click', (e) => {
+				e.preventDefault();
+				const target = e.target.closest('.page-link');
+				if (target && !target.parentElement.classList.contains('disabled')) {
+					const page = parseInt(target.dataset.page, 10);
+					if (!isNaN(page) && page >= 0) {
+						state.currentPage = page;
+						handleSearch(true);
+					}
+				}
+			});
+
+			dom.resultsContainer.addEventListener('change', handleCheckboxChange); // 개별 체크박스
+			dom.selectAllCheckbox.addEventListener('change', handleSelectAll); // 전체선택 체크박스
+			dom.bulkActionButton.addEventListener('click', handleBulkUpdate); // 상태변경 버튼
+
+			dom.resultsContainer.addEventListener('click', handleCardClick);
+
+			dom.modal.addEventListener('click', (e) => {
+				if (e.target === dom.modal) {
+					dom.modal.style.display = 'none';
+				}
+			});
+
+			handleSearch();
+		};
+
+		document.addEventListener('DOMContentLoaded', init);
+	</script>
+
+</th:block>
+
+</html>

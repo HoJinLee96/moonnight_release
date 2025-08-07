@@ -127,15 +127,10 @@
 
 			<div class="estimate-form__group">
 				<select id="cleaningService" name="cleaningService" class="form-field form-field--select">
-					<option value="">서비스</option>
-					<option value="신축청소">신축 청소</option>
-					<option value="입주청소">입주 청소</option>
-					<option value="거주청소">거주 청소</option>
-					<option value="리모델링청소">리모델링 청소</option>
-					<option value="준공청소">준공 청소</option>
-					<option value="상가청소">상가 청소</option>
-					<option value="오피스청소">오피스 청소</option>
-					<option value="기타청소">기타 청소</option>
+					<option value="" disabled selected>서비스</option>
+					<th:block th:each="service : ${cleaningServices}">
+						<option th:value="${service}" th:text="${service.label}"></option>
+					</th:block>
 				</select>
 			</div>
 
@@ -172,8 +167,8 @@
 			</div>
 
 			<input type="text" name="companyName" id="companyName"
-			  style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;" 
-			  tabindex="-1" autocomplete="off">
+				style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;" tabindex="-1"
+				autocomplete="off">
 		</form>
 	</div>
 
@@ -245,17 +240,17 @@
 				}
 				const companyName = document.getElementById('companyName');
 				if (companyName.value) {
-				  alert('잠시 후 시도해 주세요.');
-				  return;
+					alert('잠시 후 시도해 주세요.');
+					return;
 				}
-				
+
 				const simpleEstimateDto = {
 					phone: phone,
 					cleaningService: document.getElementById('cleaningService').value,
 					region: document.getElementById('region').value,
 					trap: companyName.value
 				};
-				
+
 				try {
 					await registerSimpleEstimate(simpleEstimateDto);
 					alert("간편 견적 문의가 성공적으로 접수되었습니다.\n빠른 시일 내에 담당자가 확인 후 연락드리겠습니다.");

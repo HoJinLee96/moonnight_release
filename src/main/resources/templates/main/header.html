@@ -86,17 +86,7 @@
 	<div class="content-wrapper header-content">
 		<div class="header-top">
 			<nav class="nav--top">
-				<ul id="login-header" sec:authorize="!isAuthenticated()">
-					<li><a th:href="@{/signin}">로그인</a></li>
-					<li><a th:href="@{/signup1}">회원가입</a></li>
-					<li><a href="#">고객센터</a></li>
-				</ul>
-
-				<ul id="user-header" sec:authorize="isAuthenticated()">
-					<li><span id="user-welcome" th:text="|${#authentication.principal.name}님|"></span></li>
-					<li><a th:href="@{/my}">마이페이지</a></li>
-					<li><a href="#" id="signOut">로그아웃</a></li>
-					</li>
+				<ul id="login-header">
 					<li><a href="#">고객센터</a></li>
 				</ul>
 			</nav>
@@ -119,25 +109,3 @@
 
 	</div>
 </header>
-
-<script type="module" th:fragment="headerJs">
-	import {signOut} from '/js/sign.js';
-
-	document.addEventListener('DOMContentLoaded', () => {
-
-		const signOutButton = document.getElementById('signOut');
-		if (signOutButton) {
-			signOutButton.addEventListener('click', async (e) => {
-				e.preventDefault();
-				try {
-					await signOut();
-					location.reload();
-				} catch (error) {
-					console.error("로그아웃 처리 중 에러 발생:", error);
-					alert(error.message);
-				}
-			});
-		}
-	});
-
-</script>

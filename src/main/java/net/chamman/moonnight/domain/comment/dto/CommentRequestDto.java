@@ -1,7 +1,6 @@
 package net.chamman.moonnight.domain.comment.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import net.chamman.moonnight.domain.admin.Admin;
 import net.chamman.moonnight.domain.comment.Comment;
@@ -10,7 +9,7 @@ import net.chamman.moonnight.domain.estimate.Estimate;
 
 public record CommentRequestDto(
 
-		@NotNull int encodedEstimateId,
+		int estimateId,
 
 		@NotBlank(message = "validation.comment.text.required") @Size(max = 250, message = "validation.comment.text.length") 
 		String commentText

@@ -13,7 +13,7 @@ import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 public record EstimateRequestDto(
     
     @NotBlank(message = "validation.user.name.required")
-    @Pattern(regexp = "^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$", message = "validation.user.name.invalid")
+    @Pattern(regexp = "^[가-힣a-zA-Z0-9\\s-]+$", message = "validation.user.name.invalid")
     @Size(min = 2, max = 20, message = "validation.user.name.length")
     String name,
     
@@ -28,16 +28,13 @@ public record EstimateRequestDto(
     boolean phoneAgree,
     boolean emailAgree,
     
-    @NotBlank(message = "validation.address.postcode.required")
-    @Pattern(regexp = "^\\d{5}$", message = "validation.address.postcode.invalid")
-    @Size(max = 10, message = "validation.address.postcode.length")
+    @Size(max = 5, message = "validation.address.postcode.length")
     String postcode,
     
     @NotBlank(message = "validation.address.main_address.required")
     @Size(max = 250, message = "validation.address.main_address.length")
     String mainAddress,
     
-    @NotBlank(message = "validation.address.detail_address.required")
     @Size(max = 250, message = "validation.address.detail_address.length")
     String detailAddress,
     

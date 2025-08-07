@@ -126,7 +126,7 @@ export function createImageHandler(config) {
 			const formData = new FormData();
 
 			// 1. DTO 객체를 JSON 문자열로 변환하여 추가
-			const finalDto = { ...dto, imagesPath: deletedImageUrls };
+			const finalDto = { ...dto, deletedImagesPath: deletedImageUrls };
 			formData.append('estimateRequestDto', new Blob([JSON.stringify(finalDto)], { type: 'application/json' }));
 
 			// 2. 새로 추가된 파일들을 추가

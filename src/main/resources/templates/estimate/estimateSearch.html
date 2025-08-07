@@ -555,6 +555,15 @@
 		.btn-sm {
 			width: 130px;
 		}
+
+		.form-group-parents {
+			display: flex;
+			gap: 20px;
+		}
+
+		.form-child {
+			width: 50%;
+		}
 	</style>
 </head>
 <main layout:fragment="content">
@@ -563,18 +572,11 @@
 		<button type="button" id="toggle-search-btn" class="toggle-btn" title="검색창 열기/닫기">▲</button>
 		<div class="search-form-wrapper">
 			<div class="tab-menu">
-				<button class="tab-link active" data-tab="tab-mypage">마이페이지</button>
-				<button class="tab-link" data-tab="tab-auth">본인인증</button>
+				<button class="tab-link active" data-tab="tab-auth">본인인증</button>
 				<button class="tab-link" data-tab="tab-number">견적번호</button>
 			</div>
 
-			<div id="tab-mypage" class="tab-content active">
-				<div class="description">
-					<p>로그인 후 마이페이지에서 모든 견적 내역을 확인하실 수 있습니다.</p>
-				</div>
-				<button type="button" class="btn btn-primary" onclick="location.href='/my/estimate'">마이페이지로 이동</button>
-			</div>
-			<div id="tab-auth" class="tab-content">
+			<div id="tab-auth" class="tab-content active">
 				<form id="authSearchForm" onsubmit="return false;">
 					<div class="form-group">
 						<label for="authType">인증 수단 선택</label>
@@ -585,12 +587,12 @@
 					</div>
 					<div class="form-group input-with-button">
 						<input type="text" id="authValue" name="authValue" placeholder="휴대폰 번호 입력" required>
-						<button type="button" class="btn btn-secondary" id="sendAuthCodeBtn">인증번호 발송</button>
+						<button type="button" class="btn btn-primary-mini" id="sendAuthCodeBtn">인증번호 발송</button>
 					</div>
 					<div id="verificationCodeGroup" class="form-group input-with-button" style="display: none;">
 						<input type="text" id="authCode" name="authCode" placeholder="인증번호 6자리" required>
 						<span id="timer" class="timer">03:00</span>
-						<button type="button" class="btn btn-secondary" id="verifyAuthCodeBtn">확인</button>
+						<button type="button" class="btn btn-primary-mini" id="verifyAuthCodeBtn">확인</button>
 					</div>
 					<button type="submit" class="btn btn-primary" id="authSearchBtn" disabled>조회하기</button>
 				</form>
@@ -627,11 +629,18 @@
 	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
 
-	<script th:inline="javascript"> // 혹은 <script> 태그 안에서는 기본적으로 inline 모드가 동작
+	<script th:inline="javascript">
 		const fullEstimateList = /*[[${estimateList}]]*/null;
 	</script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		window.cleaningServices = /*[[${cleaningServices}]]*/null;
+		/*]]>*/
+	</script>
+
 	<script th:inline="javascript" type="module">
 		import {validate} from '/js/validate.js';
+		import {initPhoneFormatting, removePhoneFormatting} from '/js/format.js';
 		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
@@ -643,6 +652,7 @@
 
 
 		document.addEventListener('DOMContentLoaded', function () {
+			console.log(window.cleaningServices);
 			// --- 1. DOM 요소 가져오기 ---
 			const tabLinks = document.querySelectorAll('.tab-link');
 			const tabContents = document.querySelectorAll('.tab-content');
@@ -689,6 +699,12 @@
 				authValueInput.disabled = false;
 				authValueInput.value = '';
 
+				if (authValueInput.placeholder === '휴대폰 번호 입력') {
+					initPhoneFormatting(authValueInput);
+				} else {
+					removePhoneFormatting(authValueInput);
+				}
+
 				sendAuthCodeBtn.disabled = false;
 				sendAuthCodeBtn.textContent = '인증번호 발송';
 
@@ -718,7 +734,7 @@
 				authSearchBtn.textContent = '토큰 발급 중...';
 
 				try {
-					// 1. 인증 토큰(JWT)을 먼저 발급받는다.
+					// 1. AUTH 인증 토큰(JWT)을 먼저 발급받는다.
 					if (authType === 'phone') {
 						await signInAuthPhone();
 					} else {
@@ -730,6 +746,12 @@
 
 					// 2. 발급받은 토큰으로 견적 데이터를 조회한다.
 					const json = await getAllEstimateByAuth();
+					if (json.code === '2041') {
+						showLoading(false);
+						resetVerification();
+						alert("해당 정보에 일치하는 견적서가 없습니다.");
+						return;
+					}
 					cachedEstimates = json.data;
 					showLoading(false);
 					resetVerification();
@@ -895,7 +917,7 @@
 								<div class="detail-actions">
 									<button type="button" class="btn btn-secondary btn-edit" ${!isFromAuthSearch ? 'disabled' : ''}>수정</button>
 									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
-									<button type="button" class="btn btn-danger btn-delete" ${!isFromAuthSearch ? 'disabled' : ''}>삭제</button>
+									<button type="button" class="btn btn-secondary btn-delete" ${!isFromAuthSearch ? 'disabled' : ''}>삭제</button>
 									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
 								</div>
 							`;
@@ -919,8 +941,10 @@
 							);
 							// 수정 후에는 상세 보기 화면을 다시 그려주는 것이 더 좋은 경험
 							showEstimateDetail(updatedEstimate, isFromAuthSearch);
-						}
-					});
+						},
+						modalOverlayParents: document.body
+					}
+					);
 				});
 				detailView.querySelector('.btn-delete').addEventListener('click', (e) => {
 					e.preventDefault();
@@ -1012,6 +1036,7 @@
 					alert('인증번호가 발송되었습니다.');
 					authValueInput.disabled = true;
 					sendAuthCodeBtn.textContent = '재전송';
+					sendAuthCodeBtn.classList = 'btn btn-secondary';
 					verificationCodeGroup.style.display = 'flex';
 					startCountdown(180, timerDisplay);
 
@@ -1030,6 +1055,7 @@
 				const authCode = authCodeInput.value;
 
 				verifyAuthCodeBtn.disabled = true;
+				verifyAuthCodeBtn.classList = 'btn btn-secondary';
 
 				try {
 					// 3. authType에 따라 import된 함수를 호출하도록 수정

@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -33,7 +32,7 @@ import net.chamman.moonnight.domain.admin.AdminService;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPassword;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.exception.HttpStatusCode;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomAdminDetails;
@@ -43,9 +42,8 @@ import net.chamman.moonnight.global.util.CookieUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
 import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
-@Tag(name = "SignController", description = "로그인, 회원가입, 로그아웃 API")
 @RestController
-@RequestMapping("/api/sign")
+@RequestMapping("/api/admin/sign")
 @Slf4j
 @RequiredArgsConstructor
 public class AdminSignController {
@@ -55,13 +53,13 @@ public class AdminSignController {
 	private final ApiResponseFactory apiResponseFactory;
 
 	@Operation(summary = "관리자 로그인")
-	@PostMapping("/public/in/local")
+	@PostMapping("/public/in")
 	public ResponseEntity<ApiResponseDto<Map<String, String>>> amdinSignIn(
 			@Valid @RequestBody AdminSignInRequestDto signInRequestDto, HttpServletRequest req,
 			HttpServletResponse res) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		log.debug("* 관리자 로그인 요청. Email: [{}], Client IP: [{}], Admin-Agent: [{}]",
 				LogMaskingUtil.maskEmail(signInRequestDto.email(), MaskLevel.MEDIUM), clientIp,
 				isMobileApp ? "mobile" : "web");
@@ -83,15 +81,15 @@ public class AdminSignController {
 	@SecurityRequirement(name = "X-Access-Token")
 	@SecurityRequirement(name = "X-Refresh-Token")
 	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("/private/out/local")
+	@PostMapping("/private/out")
 	public ResponseEntity<ApiResponseDto<Void>> adminSignOut(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
 			@ClientSpecific(value = "X-Access-Token") String accessToken,
 			@ClientSpecific(value = "X-Refresh-Token") String refreshToken, HttpServletRequest req,
 			HttpServletResponse res) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		log.debug("* 관리자 로그아웃 요청. Admin ID: [{}], AccessToken: [{}], Client IP: [{}], Admin-Agent: [{}]",
 				customAdminDetails != null ? customAdminDetails.getAdminId() : "anonymous",
 				LogMaskingUtil.maskToken(accessToken, MaskLevel.MEDIUM), clientIp, isMobileApp ? "mobile" : "web");
@@ -114,8 +112,8 @@ public class AdminSignController {
 			@ValidEmail @RequestParam String email, @ValidPassword @RequestParam String password,
 			@ValidPassword @RequestParam String confirmPassword, HttpServletRequest req, HttpServletResponse res) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		log.debug("* 관리자 회원가입 1차 요청. Email: [{}], VerificationEmailToken: [{}], Client IP: [{}], Admin-Agent: [{}]",
 				LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM),
 				LogMaskingUtil.maskToken(verificationEmailToken, MaskLevel.MEDIUM), clientIp,
@@ -149,8 +147,8 @@ public class AdminSignController {
 			@Valid @RequestBody AdminSignUpRequestDto signUpRequestDto, HttpServletRequest req,
 			HttpServletResponse res) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		log.debug(
 				"* 관리자 회원가입 2차 요청. AccessSignUpToken: [{}], VerificationPhoneToken: [{}], Client IP: [{}], Admin-Agent: [{}]",
 				LogMaskingUtil.maskToken(accessSignUpToken, MaskLevel.MEDIUM),
@@ -174,8 +172,8 @@ public class AdminSignController {
 			@ClientSpecific(value = "X-Refresh-Token") String refreshToken,
 			@ValidPassword @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 
 		adminService.confirmPassword(customAdminDetails.getAdminId(), password, clientIp);
 		adminSignService.deleteAdmin(customAdminDetails.getAdminId(), clientIp);

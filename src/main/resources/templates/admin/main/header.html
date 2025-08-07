@@ -1,0 +1,129 @@
+<style th:fragment="headerCss">
+	/* --- Header --- */
+	header {
+		min-width: var(--layout-min-width);
+		max-width: var(--layout-max-width);
+		margin: 0 auto;
+		position: relative;
+		
+		color: var(--main-text-color-light);
+	}
+
+	.header-content {
+		height: 125px;
+		background-image: url('/jpg/headerBackground.jpg');
+		background-size: cover;
+		background-position: center;
+		padding: 15px 50px;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		position: relative;
+		/* z-index를 주기 위해 */
+		z-index: 2;
+		/* 배경 위에 콘텐츠가 오도록 */
+	}
+
+	/* --- Top Navigation --- */
+	.header-top {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.nav--top ul {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.nav--top a,
+	.user-welcome {
+		/* ID 대신 class로 변경 */
+		text-decoration: none;
+		color: inherit;
+		/* 부모(header)의 색상 상속 */
+		padding-left: 10px;
+		font-size: 14px;
+		font-weight: 300;
+	}
+
+	/* --- Main Navigation & Logo --- */
+	.header-main {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		/* 로고와 네비게이션 하단 정렬 */
+	}
+
+	.logo a {
+		display: block;
+		height: 100px;
+		/* 로고 크기 조절 */
+	}
+
+	.logo img {
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.nav--main ul {
+		display: flex;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.nav--main a {
+		text-decoration: none;
+		color: inherit;
+		font-size: 23px;
+		padding-left: 20px;
+	}
+
+</style>
+<header th:fragment="headerFragment">
+	<div class="content-wrapper header-content">
+		<div class="header-top">
+			<nav class="nav--top">
+				<ul id="user-header" sec:authorize="isAuthenticated()">
+					<li><span id="user-welcome" th:text="|${#authentication.principal.name}님|"></span></li>
+					<li><a th:href="@{/my}">마이페이지</a></li>
+					<li><a href="" id="signOut">로그아웃</a></li>
+				</ul>
+			</nav>
+		</div>
+
+		<div class="header-main">
+			<nav class="nav--main">
+				<ul>
+					<li><a th:href="@{/admin/estimate}">견적서</a></li>
+					<li><a th:href="@{/admin/qna}">질문</a></li>
+				</ul>
+			</nav>
+		</div>
+
+	</div>
+</header>
+
+<script type="module" th:fragment="headerJs">
+	import {signOut} from '/js/admin/adminSign.js';
+
+	document.addEventListener('DOMContentLoaded', () => {
+
+		const signOutButton = document.getElementById('signOut');
+		if (signOutButton) {
+			signOutButton.addEventListener('click', async (e) => {
+				e.preventDefault();
+				try {
+					await signOut();
+					window.location.href="/admin/signIn";
+				} catch (error) {
+					console.error("로그아웃 처리 중 에러 발생:", error);
+					alert(error.message);
+				}
+			});
+		}
+	});
+
+</script>

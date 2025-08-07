@@ -5,6 +5,7 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.JWT_ILLEGAL;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,20 +19,29 @@ import net.chamman.moonnight.auth.adminSign.AdminSignService;
 import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.token.JwtProvider;
 import net.chamman.moonnight.auth.token.TokenProvider;
+import net.chamman.moonnight.global.config.SecurityConfig;
 import net.chamman.moonnight.global.exception.jwt.IllegalJwtException;
 import net.chamman.moonnight.global.security.principal.CustomAdminDetails;
+import net.chamman.moonnight.global.security.principal.TokenAuthenticator;
 
 @Component
 @Slf4j
 public class JwtFilter extends AbstractAccessTokenFilter<CustomAdminDetails> {
 
-	public JwtFilter(JwtProvider jwtProvider, TokenProvider tokenProvider, AdminSignLogService signLogService,
-			AdminSignService signService) {
-		super(jwtProvider, tokenProvider, signLogService, signService);
+	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+	
+    private static final String[] EXCLUDED_URLS = Stream.concat(
+            Stream.of(SecurityConfig.PUBLIC_ADMIN_URLS),
+            Stream.of(SecurityConfig.STATIC_RESOURCES)
+        ).toArray(String[]::new);
+
+	public JwtFilter(JwtProvider jwtProvider, TokenProvider tokenProvider, AdminSignLogService adminSignLogService,
+			AdminSignService adminSignService, TokenAuthenticator tokenAuthenticator) {
+		super(jwtProvider, tokenProvider, adminSignLogService, adminSignService, tokenAuthenticator);
 	}
 
 	@Override
-	protected CustomAdminDetails buildAdminDetails(String accessToken) {
+	protected CustomAdminDetails buildDetails(String accessToken) {
 		log.debug("* JwtFilter.buildAdminDetails 실행.");
 
 		Map<String, Object> claims = jwtProvider.validateAccessToken(accessToken);
@@ -63,16 +73,22 @@ public class JwtFilter extends AbstractAccessTokenFilter<CustomAdminDetails> {
 		if (name == null || name.isEmpty()) {
 			throw new IllegalJwtException(JWT_ILLEGAL, "JWT AuthUserDetails 생성중 오류 발생. - name");
 		}
-
+		log.debug("* userId: [{}], email: [{}], name: [{}], authorities: [{}]",userId, email, name, authorities);
 		return new CustomAdminDetails(userId, email, name, authorities);
 	}
 
-	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		AntPathMatcher matcher = new AntPathMatcher();
-		String PRIVATE_PATTERN = "/api/admin/**";
-		String uri = request.getRequestURI();
-		return !matcher.match(PRIVATE_PATTERN, uri);
-	}
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String uri = request.getRequestURI();
+
+        for (String excludedUrl : EXCLUDED_URLS) {
+            if (pathMatcher.match(excludedUrl, uri)) {
+                // 포함된다면, 필터를 실행하지 않음 (true 리턴)
+                return true;
+            }
+        }
+        // 포함되지 않는다면, 필터를 실행함 (false 리턴)
+        return false;
+    }
 
 }

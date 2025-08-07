@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<title>로그인</title>
+	<style>
+		:root {
+			--main-color: #20367a;
+			--main-text-color: #333;
+			--main-text-color-light: white;
+			--main-text-color-gray: #3b3b3b;
+			--border-color: #efefef;
+			--error-color: red;
+			--base-border-radius: 5px;
+			--font-size-base: 16px;
+			--layout-min-width: 940px;
+			--layout-max-width: 1920px;
+			--layout-min-height: 650px;
+		}
+
+		/* body는 이제 여백과 기본 폰트 설정만 담당 */
+		body {
+			margin: 0;
+			padding: 0;
+			font-size: var(--font-size-base);
+			color: var(--main-text-color);
+		}
+
+		/* main이 페이지의 전체적인 너비와 중앙 정렬을 모두 책임짐 */
+		main {
+			min-height: var(--layout-min-height);
+			min-width: var(--layout-min-width);
+			max-width: var(--layout-max-width);
+			margin: 0 auto;
+		}
+
+		.container {
+			padding: 50px 0px;
+			min-height: 1080px;
+		}
+	</style>
+	<style>
+			/* 공용 버튼 스타일 */
+			.btn {
+				padding: 12px 20px;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 16px;
+				font-weight: bold;
+				transition: all 0.2s ease;
+				flex-shrink: 0;
+				text-decoration: none;
+			}
+
+			.btn:disabled {
+				background-color: #ccc;
+				cursor: not-allowed;
+			}
+
+			.btn-primary {
+				background-color: #20367a;
+				color: white;
+				width: 100%;
+				/* 버튼 너비를 폼과 맞춤 */
+			}
+
+			.btn-primary:hover:not(:disabled) {
+				background-color: #182a5e;
+			}
+
+			.btn-primary-mini {
+				background-color: #20367a;
+				color: white !important;
+			}
+
+			.btn-primary-mini:hover:not(:disabled) {
+				background-color: #182a5e;
+			}
+
+			.btn-secondary {
+				background-color: #e9ecef;
+				color: #495057;
+				border: 1px solid #dee2e6;
+			}
+
+			.btn-secondary:hover:not(:disabled) {
+				background-color: #c7cacc;
+			}
+			
+			.btn-tertiary {
+				background-color: var(--border-color);
+				color: var(--main-text-color-gray);
+			}
+			
+			.btn-tertiary:hover:not(:disabled) {
+				background-color: #e2e2e2;
+			}
+			
+			.btn-outline {
+				background-color: white;
+				color: #20367a;
+				border: 1px solid #20367a;
+			}
+
+			.btn-outline:hover {
+				background-color: #20367a;
+				color: white;
+			}
+		</style>
+	<style>
+		.container {
+			padding-top: 100px;
+			min-height: 880px;
+		}
+
+		.loginform {
+			max-width: 400px;
+			min-width: 400px;
+			margin: 0 auto;
+			border: 2px solid #20367a;
+			padding: 20px 100px 40px 100px;
+			border-radius: 10px;
+			text-align: center;
+		}
+
+		.title {
+			text-align: left;
+			margin-bottom: 50px;
+		}
+
+		#loginForm label[for="email"],
+		#loginForm label[for="password"] {
+			text-align: left;
+			display: block;
+			margin: 0px;
+			padding: 0px;
+			margin-top: 15px;
+			/* input과의 간격을 조정 */
+			font-size: 14px;
+		}
+
+		#email,
+		#password {
+			width: 400px;
+			height: 40px;
+			border: none;
+			border-bottom: 2px solid #ccc;
+			outline: none;
+			transition: border-bottom-color 0.3s;
+		}
+
+		#email:focus,
+		#password:focus {
+			border-bottom: 2px solid #20367a;
+		}
+
+		#OAutoLoginBlcok {
+			padding: 10px 0px 30px 0px;
+			display: flex;
+			justify-content: center;
+			/* 아이템 사이에 여백을 넣어 균등 배치 */
+			align-items: center;
+			/* 수직 정렬 */
+		}
+
+		#OAutoLoginBlcok a {
+			text-decoration: none;
+			display: block;
+			width: 60px;
+			height: 60px;
+			margin: 0px 5px;
+
+		}
+
+		#OAutoLoginBlcok img {
+			cursor: pointer;
+			width: 60px;
+			height: 60px;
+		}
+
+		#rememmberEmailCheckbox {
+			appearance: none;
+			/* 기본 스타일 제거 */
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			background-color: #fff;
+			border: 2px solid #ccc;
+			border-radius: 50%;
+			/* 동그랗게 만들기 */
+			width: 15px;
+			height: 15px;
+			cursor: pointer;
+			position: relative;
+			outline: none;
+			transition: background-color 0.2s, border-color 0.2s;
+		}
+
+		#rememmberEmailCheckbox:checked {
+			background-color: #20367a;
+			/* 체크된 배경색 */
+			border-color: #20367a;
+		}
+
+		#rememmberEmailCheckbox:checked::after {
+			content: '';
+			position: absolute;
+			top: 40%;
+			left: 50%;
+			width: 4px;
+			height: 8px;
+			border: solid white;
+			border-width: 0 2px 2px 0;
+			transform: translate(-50%, -50%) rotate(45deg);
+		}
+
+		label[for="rememmberEmailCheckbox"] {
+			font-size: 14px;
+			margin-right: 140px;
+			color: #666;
+		}
+
+		#findEmail,
+		#findPassword {
+			text-decoration: none;
+			color: #b1b1b1;
+			font-size: 14px;
+			margin-left: 5px;
+		}
+
+		#findEmail::after {
+			content: '';
+			border-right: 1px solid #e1e1e1;
+			padding-left: 5px;
+		}
+
+		#findEmail:hover,
+		#findPassword:hover {
+			color: #20367a;
+			cursor: pointer;
+		}
+
+		#etcActionDiv {
+			display: flex;
+			align-items: center;
+			margin-top: 20px;
+			line-height: normal;
+		}
+
+		.btn-primary {
+			margin-top: 10px;
+		}
+
+		.btn-tertiary {
+			width: 100%;
+			margin-top: 10px;
+		}
+
+		#underline-text {
+			width: 400px;
+			position: relative;
+			display: inline-block;
+			margin: 10px 0px;
+		}
+
+		#underline-text::after {
+			content: "다른 방법 로그인";
+			color: #b1b1b1;
+			background-color: white;
+			padding: 0px 15px;
+			font-size: 15px;
+		}
+
+		#underline-text::before {
+			content: '';
+			position: absolute;
+			width: 100%;
+			height: 1px;
+			background-color: #e1e1e1;
+			top: 10px;
+			left: 0px;
+			z-index: -1;
+		}
+
+		.emailDiv {
+			display: inline;
+			position: relative;
+		}
+
+		#emailInitButton {
+			display: none;
+			position: absolute;
+			right: 10px;
+			top: 30px;
+			border: 1px solid #d0d0d0;
+			border-radius: 50%;
+			padding: 0px 4px;
+			font-size: 12px;
+			color: white;
+			background: #d0d0d0;
+			cursor: pointer;
+		}
+
+		.passwordDiv {
+			display: inline;
+			position: relative;
+		}
+
+		#passwordViewButton {
+			background-image: url('https://chamman.s3.ap-northeast-2.amazonaws.com/static/img/eyeHiddenIcon.png');
+			background-size: cover;
+			width: 17px;
+			height: 17px;
+
+			display: none;
+			position: absolute;
+			right: 40px;
+			top: 43px;
+			cursor: pointer;
+		}
+
+		#passwordInitButton {
+			display: none;
+			position: absolute;
+			right: 10px;
+			top: 43px;
+			border: 1px solid #d0d0d0;
+			border-radius: 50%;
+			padding: 0px 4px;
+			font-size: 12px;
+			color: white;
+			background: #d0d0d0;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<main>
+		<div class="container">
+
+			<div class="loginform">
+				<h2 class="title">로그인</h2>
+				<form id="loginForm">
+					<div class="emailDiv">
+						<label for="email">이메일</label>
+						<input type="email" id=email name="email" required autofocus placeholder="example@example.com">
+						<div id="emailInitButton">&times;</div>
+					</div>
+					<div class="passwordDiv">
+						<label for="password">비밀번호</label>
+						<input type="password" id="password" name="password" required placeholder="password">
+						<div id="passwordViewButton"></div>
+						<div id="passwordInitButton">&times;</div>
+					</div>
+					<div id="etcActionDiv">
+						<input type="checkbox" id="rememberEmailCheckbox" name="rememberEmailCheckbox">
+						<label for="rememberEmailCheckbox">이메일 저장</label>
+						<a id="findEmail" href="/admin/find/email">이메일 찾기</a>
+						<a id="findPassword" href="/admin/find/password">비밀번호 찾기</a>
+					</div>
+					<button class="btn btn-primary" id="signInButton" type="submit">로그인</button>
+				</form>
+				<button class="btn btn-tertiary" id="signUpButton" type="button">회원가입</button>
+			</div>
+
+		</div>
+	</main>
+</body>
+<script type="module" th:inline="javascript">
+	import {signIn} from '/js/admin/adminSign.js';
+	import {passwordViewToggle, inputValueInit, buttonDisplay, openblankWindow} from '/js/ui-controller.js';
+
+	var email = document.getElementById('email');
+	var emailInitButton = document.getElementById('emailInitButton');
+	email.addEventListener('input', function () {
+		buttonDisplay(email, emailInitButton);
+	});
+	email.addEventListener('blur', function () {
+		buttonDisplay(email, emailInitButton);
+	});
+	emailInitButton.addEventListener('click', function () {
+		inputValueInit(email, emailInitButton);
+	});
+
+	var password = document.getElementById('password');
+	var passwordInitButton = document.getElementById('passwordInitButton');
+	var passwordViewButton = document.getElementById('passwordViewButton');
+	password.addEventListener('input', function () {
+		buttonDisplay(password, passwordInitButton);
+		buttonDisplay(password, passwordViewButton);
+	});
+	password.addEventListener('blur', function () {
+		buttonDisplay(password, passwordInitButton);
+		buttonDisplay(password, passwordViewButton);
+	});
+	passwordInitButton.addEventListener('click', function () {
+		inputValueInit(password, passwordInitButton);
+		inputValueInit(password, passwordViewButton);
+	});
+	passwordViewButton.addEventListener('click', function () {
+		passwordViewToggle(password, passwordViewButton);
+	});
+
+	document.addEventListener("DOMContentLoaded", () => {
+		const rememberedEmail = localStorage.getItem('rememberEmail');
+		if (rememberedEmail) {
+			document.getElementById('email').value = rememberedEmail;
+			document.getElementById('rememberEmailCheckbox').checked = true;
+			buttonDisplay(email, emailInitButton);
+			password.focus();
+		}
+	});
+
+	document.getElementById('signUpButton').addEventListener('click', function () {
+		window.location.href = `/admin/signUp1`;
+	});
+
+	document.getElementById("loginForm").addEventListener("submit", async (e) => {
+		e.preventDefault();
+
+		const email = document.getElementById("email").value;
+		const password = document.getElementById("password").value;
+		const rememberEmail = document.getElementById("rememberEmailCheckbox").checked;
+
+		const signInDto = {
+			email: email,
+			password: password
+		};
+		try {
+			await signIn(signInDto, rememberEmail);
+		} catch (error) {
+			alert(error.message);
+		}
+	});
+
+</script>
+
+</html>

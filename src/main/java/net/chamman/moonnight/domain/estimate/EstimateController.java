@@ -28,16 +28,18 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.security.principal.AuthDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
+import net.chamman.moonnight.global.util.CookieUtil;
 
 @RestController
 @RequestMapping("/api/estimate")
@@ -61,7 +63,7 @@ public class EstimateController {
 			images.forEach(path -> log.debug("* 견적서 imagesPath: {}", path.getName()));
 		}
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
 
 		EstimateResponseDto estimateResponseDto = estimateService.registerEstimate(estimateRequestDto, images, clientIp);
 
@@ -72,11 +74,12 @@ public class EstimateController {
 	@PreAuthorize("hasRole('AUTH')")
 	@GetMapping("/private/auth")
 	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> getAllEstimateByAuth(
-			@AuthenticationPrincipal AuthDetails authDetails) {
+			@AuthenticationPrincipal AuthDetails authDetails,HttpServletRequest req, HttpServletResponse res) {
 
 		List<EstimateResponseDto> list = estimateService.getEstimateResponseDtoListByAuth(authDetails.getRecipient());
 
 		if (list == null || list.isEmpty() || list.size() == 0) {
+			CookieUtil.deleteCookie(req, res, "X-Auth-Token");
 			return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS_NO_DATA, null));
 		}
 
@@ -85,7 +88,7 @@ public class EstimateController {
 
 //  AUTH 토큰 통해 견적서 단건 조회
 	@PreAuthorize("hasRole('AUTH')")
-	@GetMapping("/auth/{estimateId}")
+	@GetMapping("/private/auth/{estimateId}")
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getEstimateByAuth(
 			@AuthenticationPrincipal AuthDetails authDetails,
 			@PathVariable("estimateId") int encodedEstimateId) {
@@ -126,7 +129,7 @@ public class EstimateController {
 	}
 
 //  AUTH 토큰 통해 견적서 삭제
-	@PreAuthorize("hasRole('AUTH') ")
+	@PreAuthorize("hasRole('AUTH')")
 	@DeleteMapping("/private/auth/{estimateId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAuth(
 			@AuthenticationPrincipal AuthDetails authDetails,

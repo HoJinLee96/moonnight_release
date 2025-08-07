@@ -26,7 +26,7 @@ import net.chamman.moonnight.auth.verification.dto.VerificationPhoneRequestDto;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPhone;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.util.ApiResponseDto;
 import net.chamman.moonnight.global.util.ApiResponseFactory;
 
@@ -46,8 +46,8 @@ public class VerificationController {
 			@Valid @RequestBody VerificationPhoneRequestDto verificationPhoneRequestDto,
 			HttpServletRequest request) {
 		
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		
 		String token = verificationService.compareSms(
 				verificationId,
@@ -80,8 +80,8 @@ public class VerificationController {
 			@Valid @RequestBody VerificationEmailRequestDto verificationEmailRequestDto,
 			HttpServletRequest request) {
 		
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		
 		String token = verificationService.compareEmail(
 				verificationId,
@@ -113,8 +113,8 @@ public class VerificationController {
 			@ValidPhone @RequestParam String phone,
 			HttpServletRequest request) {
 		
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		
 		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
@@ -142,8 +142,8 @@ public class VerificationController {
 			@ValidEmail @RequestParam String email,
 			HttpServletRequest request) {
 		
-		String clientIp = RequestContextHolder.getContext().getClientIp();
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		
 		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		

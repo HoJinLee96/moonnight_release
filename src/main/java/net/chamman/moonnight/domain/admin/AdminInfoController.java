@@ -36,7 +36,7 @@ import net.chamman.moonnight.global.annotation.ClientSpecific;
 import net.chamman.moonnight.global.annotation.ValidEmail;
 import net.chamman.moonnight.global.annotation.ValidPassword;
 import net.chamman.moonnight.global.annotation.ValidPhone;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.security.principal.CustomAdminDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
@@ -78,7 +78,7 @@ public class AdminInfoController {
 			@ClientSpecific("X-Verification-Phone-Token") String token, @ValidEmail @RequestParam String email,
 			@ValidPhone @RequestParam String phone, HttpServletResponse res) {
 
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 
 		String findPwToken = adminService.createFindPwTokenByVerifyPhone(email, phone, token);
 
@@ -97,7 +97,7 @@ public class AdminInfoController {
 			@ClientSpecific("X-Verification-Email-Token") String token, @ValidEmail @RequestParam String email,
 			HttpServletResponse res) {
 
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 
 		String findPwToken = adminService.createFindPwTokenByVerifyEmail(email, token);
 
@@ -122,7 +122,7 @@ public class AdminInfoController {
 					"새로운 두 비밀번호가 일치하지 않음. password: " + password + ", confirmPassword: " + confirmPassword);
 		}
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
 
 		adminService.updatePasswordByFindPwToken(accessFindPwToken, password, clientIp);
 
@@ -136,7 +136,7 @@ public class AdminInfoController {
 			@ClientSpecific("X-Verification-Phone-Token") String verificationPhoneToken,
 			@ValidPhone @RequestParam String phone, HttpServletRequest request) {
 
-		String clientIp = RequestContextHolder.getContext().getClientIp();
+		String clientIp = CustomRequestContextHolder.getClientIp();
 
 		adminService.updatePhoneByVerification(customAdminDetails.getAdminId(), phone, verificationPhoneToken, clientIp);
 

@@ -15,7 +15,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.global.annotation.ClientSpecific;
-import net.chamman.moonnight.global.context.RequestContextHolder;
+import net.chamman.moonnight.global.context.CustomRequestContextHolder;
 import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.util.LogMaskingUtil;
@@ -48,9 +48,9 @@ public class ClientSpecificArgumentResolver implements HandlerMethodArgumentReso
 			throw new IllegalRequestException(ILLEGAL_REQUEST,"요청 정보를 가져올 수 없습니다.");
 		}
 		
-		boolean isMobileApp = RequestContextHolder.getContext().isMobileApp();
+		boolean isMobileApp = CustomRequestContextHolder.isMobileApp();
 		String clientTypeKr = isMobileApp ? "모바일 앱" : "웹";
-		log.debug("*{} 접근. {} 토큰 확인.", clientTypeKr, valueName);
+		log.debug("* {} 접근. {} 토큰 확인.", clientTypeKr, valueName);
 
 		String token = null;
 		

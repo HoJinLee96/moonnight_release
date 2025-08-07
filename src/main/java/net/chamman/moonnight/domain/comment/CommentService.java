@@ -16,7 +16,6 @@ import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.admin.Admin;
 import net.chamman.moonnight.domain.admin.AdminService;
 import net.chamman.moonnight.domain.comment.Comment.CommentStatus;
-import net.chamman.moonnight.domain.comment.dto.CommentRequestDto;
 import net.chamman.moonnight.domain.comment.dto.CommentResponseDto;
 import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.EstimateService;
@@ -45,16 +44,21 @@ public class CommentService {
 	 * @return 댓글
 	 */
 	@Transactional
-	public CommentResponseDto registerComment(int adminId, CommentRequestDto commentRequestDto) {
+	public CommentResponseDto registerComment(int adminId, int encodedEstimateId, String commentText) {
 		
 		Admin admin = adminService.getActiveAdminByAdminId(adminId);
 		
-		Estimate estimate = estimateService.getEstimateByIdNotDelete(commentRequestDto.encodedEstimateId());
+		Estimate estimate = estimateService.getEstimateByIdNotDelete(encodedEstimateId);
 		
-		Comment comment = commentRequestDto.toEntity(admin, estimate);
+		Comment comment = Comment.builder()
+				.admin(admin)
+				.estimate(estimate)
+				.commentText(commentText)
+				.commentStatus(CommentStatus.ACTIVE)
+				.build();
 		commentRepository.save(comment);
 		
-		return CommentResponseDto.fromEntity(comment, adminId, obfuscator);
+		return CommentResponseDto.fromEntity(comment, admin, obfuscator);
 	}
 	
 	/** 견적서의 댓글 리스트 조회
@@ -64,11 +68,13 @@ public class CommentService {
 	 */
 	public List<CommentResponseDto> getCommentList(int encodedEstimateId, int adminId) {
 		
+		Admin admin = adminService.getActiveAdminByAdminId(adminId);
+
 		List<Comment> list = commentRepository.findByEstimate_EstimateId(obfuscator.decode(encodedEstimateId));
 		
 		return list.stream()
 				.filter(e->e.getCommentStatus()!=CommentStatus.DELETE)
-				.map(comment -> CommentResponseDto.fromEntity(comment, adminId, obfuscator))
+				.map(comment -> CommentResponseDto.fromEntity(comment, admin, obfuscator))
 				.collect(Collectors.toList());
 	}
 	
@@ -82,10 +88,14 @@ public class CommentService {
 	 * @throws ForbiddenException {@link #getAuthorizedComment} 댓글 권한 없음
 	 */
 	@Transactional
-	public void updateComment(int encodedCommentId, CommentRequestDto commentRequestDto, int adminId) {
+	public CommentResponseDto updateComment(int encodedCommentId, String commentText, int adminId) {
 		
+		Admin admin = adminService.getActiveAdminByAdminId(adminId);
+
 		Comment comment = getAuthorizedComment(adminId, encodedCommentId);
-		comment.setCommentText(commentRequestDto.commentText());
+		comment.setCommentText(commentText);
+		commentRepository.flush();
+		return CommentResponseDto.fromEntity(comment, admin, obfuscator);
 	}
 	
 	/**
@@ -98,7 +108,8 @@ public class CommentService {
 	 */
 	@Transactional
 	public void deleteComment(int adminId, int encodedCommentId) {
-		
+		adminService.getActiveAdminByAdminId(adminId);
+
 		Comment comment = getAuthorizedComment(adminId, encodedCommentId);
 		comment.setCommentStatus(CommentStatus.DELETE);
 	}
