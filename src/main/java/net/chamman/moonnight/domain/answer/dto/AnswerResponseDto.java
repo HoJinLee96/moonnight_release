@@ -6,12 +6,12 @@ import net.chamman.moonnight.domain.answer.Answer;
 
 public record AnswerResponseDto(
 		int answerId, 
-		String content, 
+		String content,
 		LocalDateTime createdAt) {
 	
-	public static AnswerResponseDto from(Answer answer) {
+	public static AnswerResponseDto from(Answer answer, int encodedId) {
 		return new AnswerResponseDto(
-				answer.getId(), 
+				encodedId,
 				answer.getContent(), 
 				answer.getCreatedAt()
 				);
