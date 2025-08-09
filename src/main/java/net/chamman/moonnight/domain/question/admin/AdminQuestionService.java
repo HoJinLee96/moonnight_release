@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
+import net.chamman.moonnight.domain.answer.dto.AnswerResponseDto;
 import net.chamman.moonnight.domain.question.Question;
 import net.chamman.moonnight.domain.question.Question.QuestionStatus;
 import net.chamman.moonnight.domain.question.QuestionRepository;
@@ -83,12 +84,19 @@ public class AdminQuestionService {
 	}
 	
     private QuestionResponseDto convertToDto(Question question) {
-        int encodedId = obfuscator.encode(question.getId());
-        return QuestionResponseDto.from(question, encodedId);
+        int encodedId = obfuscator.encode(question.getQuestionId());
+        List<AnswerResponseDto> answerDtos = question.getAnswers().stream()
+                .map(answer -> new AnswerResponseDto(
+                		obfuscator.encode(answer.getAnswerId()), // 서비스 계층에서 직접 인코딩!
+                        answer.getContent(),
+                        answer.getCreatedAt()
+                ))
+                .toList();
+        return QuestionResponseDto.from(question, encodedId, answerDtos);
     }
     
     private QuestionSimpleResponseDto convertToSimpleDto(Question question) {
-    	int encodedId = obfuscator.encode(question.getId());
+    	int encodedId = obfuscator.encode(question.getQuestionId());
     	return QuestionSimpleResponseDto.from(question, encodedId);
     }
     

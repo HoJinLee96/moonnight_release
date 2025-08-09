@@ -43,7 +43,7 @@ public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "question_id")
-    private int id;
+    private int questionId;
 
     @Setter
     @Column(nullable = false)
