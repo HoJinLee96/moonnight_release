@@ -24,6 +24,7 @@ public enum HttpStatusCode {
 	METHOD_NOT_ALLOWED(405, "4050", "message.common.method_not_allowed"), // 요청 url 이상
 	TOO_MANY_REQUEST(429,"4290","message.common.too_many_request"), 
 	INTERNAL_SERVER_ERROR(500, "5000", "message.common.internal_server_error"),
+	VERSION_MISMATCH(409,"4091","message.common.version_mismatch"),
 	
 	// User 453
 	USER_NOT_FOUND(404,"4530","message.user.not_found"),
@@ -55,6 +56,15 @@ public enum HttpStatusCode {
 	// Estimate 456
 	ESTIMATE_NOT_FOUND(404,"4560","message.estimate.not_found"),
 	ESTIMATE_STATUS_DELETE(404,"4561","message.estimate.status_delete"),
+	
+	// Question 465
+	QUESTION_NOT_FOUND(404,"4650","message.question.not_found"),
+	QUESTION_STATUS_DELETE(404,"4651","message.question.status_delete"),
+	QUESTION_PASSWORD_MISMATCH(404,"4652","message.question.password_mismatch"),
+
+	// Answer 466
+	ANSWER_NOT_FOUND(404,"4665","message.answer.not_found"),
+	ANSWER_STATUS_DELETE(404,"4661","message.answer.status_delete"),
 	
 	// Sign 452
 	SIGNIN_FAILED(404,"4520","message.sign.signin_failed"),
