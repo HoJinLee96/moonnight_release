@@ -1,4 +1,4 @@
-package net.chamman.moonnight.global.exception.user;
+package net.chamman.moonnight.global.exception.admin;
 
 import lombok.Getter;
 import net.chamman.moonnight.global.exception.CustomException;

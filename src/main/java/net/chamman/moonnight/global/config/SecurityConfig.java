@@ -42,11 +42,10 @@ public class SecurityConfig {
 	};
 
 	// 관리자 인증이 필요한 모든 경로 (PUBLIC_ADMIN_URLS 제외)
-	public static final String[] ADMIN_URLS = { "/admin/**", "/api/admin/*/private/**" };
+	public static final String[] ADMIN_URLS = { "/admin/**", "/api/admin/**" };
 
 	// 사용자 인증이 필요한 특정 경로
-	public static final String[] USER_PRIVATE_URLS = { "/api/estimate/private/auth", "/api/estimate/private/auth/**",
-			"/api/sign/private/out/auth" };
+	public static final String[] USER_PRIVATE_URLS = { "/api/*/private/**" };
 
 	// 모든 접근 허용
     @Bean

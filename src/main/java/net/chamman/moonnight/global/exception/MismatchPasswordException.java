@@ -1,7 +1,4 @@
-package net.chamman.moonnight.global.exception.user;
-
-import net.chamman.moonnight.global.exception.CustomException;
-import net.chamman.moonnight.global.exception.HttpStatusCode;
+package net.chamman.moonnight.global.exception;
 
 public class MismatchPasswordException extends CustomException{
 

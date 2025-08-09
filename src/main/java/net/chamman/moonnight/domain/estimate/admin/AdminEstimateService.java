@@ -1,4 +1,4 @@
-package net.chamman.moonnight.domain.estimate;
+package net.chamman.moonnight.domain.estimate.admin;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.ESTIMATE_NOT_FOUND;
 
@@ -11,6 +11,9 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
+import net.chamman.moonnight.domain.estimate.Estimate;
+import net.chamman.moonnight.domain.estimate.EstimateRepository;
+import net.chamman.moonnight.domain.estimate.EstimateService;
 import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
@@ -20,7 +23,7 @@ import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class EstimateAdminService {
+public class AdminEstimateService {
 
 	private final EstimateRepository estimateRepository;
 	private final EstimateService estimateService;
