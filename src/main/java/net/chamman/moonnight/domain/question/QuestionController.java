@@ -1,6 +1,10 @@
 package net.chamman.moonnight.domain.question;
 
 import static net.chamman.moonnight.global.exception.HttpStatusCode.CREATE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.DELETE_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.SUCCESS;
+import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
 
 import java.util.List;
 
@@ -59,7 +63,7 @@ public class QuestionController {
 		
 		List<QuestionSimpleResponseDto> resDto = questionService.getQuestionsByPage(pageable);
 				
-		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(READ_SUCCESS, resDto));
 	}
 	
 	@Operation(summary = "질문 검색 리스트 조회", description = "질문 검색 리스트 조회")
@@ -70,7 +74,7 @@ public class QuestionController {
 		
 		List<QuestionSimpleResponseDto> resDto = questionService.getQuestionsByTitle(title, pageable);
 				
-		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(READ_SUCCESS, resDto));
 	}
 	
 	@Operation(summary = "질문 비밀번호 입력 조회", description = "질문 비밀번호 입력 조회")
@@ -81,7 +85,7 @@ public class QuestionController {
 		
 		QuestionResponseDto resDto = questionService.verifyPasswordForModification(questionId, dto);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(SUCCESS, resDto));
 	}
 	
 	@Operation(summary = "질문 수정", description = "질문 수정")
@@ -92,7 +96,7 @@ public class QuestionController {
 		
 		QuestionResponseDto resDto = questionService.modifyQuestion(questionId, dto);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(UPDATE_SUCCESS, resDto));
 	}
 	
 	@Operation(summary = "질문 삭제", description = "질문 삭제")
@@ -103,7 +107,7 @@ public class QuestionController {
 		
 		QuestionResponseDto resDto = questionService.deleteQuestion(questionId, dto);
 		
-		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(DELETE_SUCCESS, resDto));
 	}
 	
 }

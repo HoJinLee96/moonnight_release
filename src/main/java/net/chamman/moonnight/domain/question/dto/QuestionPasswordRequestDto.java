@@ -7,7 +7,7 @@ public record QuestionPasswordRequestDto(
 		
 		@NotBlank(message = "비밀번호를 입력해주세요.")
 		@Size(max = 4, message = "비밀번호는 4자를 넘을 수 없습니다.")
-		int password
+		String password
 		) {
 
 }

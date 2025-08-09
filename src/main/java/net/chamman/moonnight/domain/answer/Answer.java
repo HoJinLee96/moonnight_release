@@ -64,7 +64,7 @@ public class Answer {
     private int version;
     
     public void modify(String content) {
-        if (content != null && content.isBlank()) {
+        if (content != null && !content.isBlank()) {
             this.content = content;
         }
     }

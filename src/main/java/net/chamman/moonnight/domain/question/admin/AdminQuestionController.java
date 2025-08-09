@@ -71,7 +71,7 @@ public class AdminQuestionController {
             @PathVariable int questionId,
 			@Valid @RequestBody AdminQuestionModifyRequestDto dto) {
 		
-		QuestionResponseDto resDto = adminQuestionService.modifyQuestion(customAdminDetails.getAdminId(), dto);
+		QuestionResponseDto resDto = adminQuestionService.modifyQuestion(customAdminDetails.getAdminId(), questionId, dto);
 		
 		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, resDto));
 	}

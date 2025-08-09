@@ -68,7 +68,7 @@ public class QuestionService {
 	public QuestionResponseDto verifyPasswordForModification(int questionId, QuestionPasswordRequestDto dto) {
 		Question question = findQuestionById(questionId);
 
-		boolean match = passwordEncoder.matches(dto.password()+"", question.getPassword());
+		boolean match = passwordEncoder.matches(dto.password(), question.getPassword());
 		if(match) {
 			return convertToDto(question);
 		} else {

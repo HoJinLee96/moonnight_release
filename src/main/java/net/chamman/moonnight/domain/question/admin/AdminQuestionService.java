@@ -53,9 +53,9 @@ public class AdminQuestionService {
 	
 	@Transactional
 	@ActiveAdminOnly
-	public QuestionResponseDto modifyQuestion(int adminId, AdminQuestionModifyRequestDto dto) {
+	public QuestionResponseDto modifyQuestion(int adminId, int questionId, AdminQuestionModifyRequestDto dto) {
 
-        Question question = findQuestionWithVersion(dto.questionId(), dto.version());
+        Question question = findQuestionWithVersion(questionId, dto.version());
         
 		question.modify(dto.title(), dto.content());
 		
@@ -75,13 +75,11 @@ public class AdminQuestionService {
 	
 	@Transactional
 	@ActiveAdminOnly
-	public QuestionResponseDto deleteQuestion(int adminId, int questionId, AdminQuestionDeleteRequestDto dto) {
+	public void deleteQuestion(int adminId, int questionId, AdminQuestionDeleteRequestDto dto) {
 
         Question question = findQuestionWithVersion(questionId, dto.version());
 		
 		question.updateStatus(QuestionStatus.DELETE);
-		
-		return convertToDto(question);
 	}
 	
     private QuestionResponseDto convertToDto(Question question) {
