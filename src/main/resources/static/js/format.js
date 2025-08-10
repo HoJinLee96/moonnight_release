@@ -43,7 +43,6 @@ export function initPhoneFormatting(inputElement) {
 	if (!inputElement) return;
 	// '이름 있는' 함수를 이벤트 리스너로 등록
 	inputElement.addEventListener('input', handlePhoneFormatting);
-	console.log("등록 완료");
 }
 
 /**
@@ -54,7 +53,6 @@ export function removePhoneFormatting(inputElement) {
 	if (!inputElement) return;
 	// 등록했던 '이름 있는' 함수를 정확히 지정하여 제거
 	inputElement.removeEventListener('input', handlePhoneFormatting);
-	console.log("제거 완료");
 }
 
 /**
@@ -78,6 +76,14 @@ export function initVerificationCodeFormatting(inputElement) {
 
 	inputElement.addEventListener('input', (e) => {
 		e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
+	});
+}
+
+export function initQuestionPasswordFormatting(inputElement) {
+	if (!inputElement) return;
+	
+	inputElement.addEventListener('input', (e) => {
+		e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
 	});
 }
 

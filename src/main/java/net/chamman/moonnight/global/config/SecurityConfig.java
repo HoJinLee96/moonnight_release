@@ -37,8 +37,10 @@ public class SecurityConfig {
 			"/admin/sign/stop", 
 			"/admin/sign/delete", 
 			"/admin/find/email",
-			"/admin/find/password"
-			// 기타 필요한 public 관리자 경로 추가
+			"/admin/find/password",
+			"/api/admin/sign/public/in",
+			"/api/admin/sign/public/up/first",
+			"/api/admin/sign/public/up/second"
 	};
 
 	// 관리자 인증이 필요한 모든 경로 (PUBLIC_ADMIN_URLS 제외)

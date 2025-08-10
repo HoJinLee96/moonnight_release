@@ -105,6 +105,7 @@ public class QuestionController {
             @PathVariable int questionId,
 			@Valid @RequestBody QuestionDeleteRequestDto dto) {
 		
+		log.debug("* questionId: [{}], QuestionDeleteRequestDto: [{}]", questionId, dto);
 		QuestionResponseDto resDto = questionService.deleteQuestion(questionId, dto);
 		
 		return ResponseEntity.status(HttpStatus.OK).body(apiResponseFactory.success(DELETE_SUCCESS, resDto));

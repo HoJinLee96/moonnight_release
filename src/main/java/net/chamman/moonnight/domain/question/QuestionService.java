@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
 import net.chamman.moonnight.domain.answer.dto.AnswerResponseDto;
 import net.chamman.moonnight.domain.question.Question.QuestionStatus;
@@ -28,6 +29,7 @@ import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class QuestionService {
 	
 	private final QuestionRepository questionRepository;
@@ -90,13 +92,13 @@ public class QuestionService {
 	public QuestionResponseDto deleteQuestion(int questionId, QuestionDeleteRequestDto dto) {
 		Question question = findQuestionWithAuth(questionId, dto.password(), dto.version());
 		
-		question.updateStatus(QuestionStatus.DELETE);
+		question.updateStatusDelete();
 		
 		return convertToDto(question);
 	}
 	
     private Question findQuestionById(int questionId) {
-        Question question = questionRepository.findById(questionId)
+        Question question = questionRepository.findById(obfuscator.decode(questionId))
                 .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
         if (question.isDelete()) { // 엔티티에 isDeleted() 같은 편의 메서드 추가 추천
             throw new StatusDeleteException(QUESTION_STATUS_DELETE, "삭제된 질문.");
@@ -105,7 +107,8 @@ public class QuestionService {
     }
 
     private Question findQuestionWithAnswersById(int questionId) {
-        Question question = questionRepository.findByIdWithAnswers(questionId)
+    	log.debug("* questionId: [{}]", obfuscator.decode(questionId));
+        Question question = questionRepository.findByIdWithAnswers(obfuscator.decode(questionId))
                 .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
         if (question.isDelete()) {
             throw new StatusDeleteException(QUESTION_STATUS_DELETE, "삭제된 질문.");

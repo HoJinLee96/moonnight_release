@@ -11,9 +11,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AnswerRepository extends JpaRepository<Answer, Integer> {
 
-	List<Answer> getByQuestionId(int questionId);
+	List<Answer> findByQuestion_QuestionId(int questionId);
 	
 	@Query("SELECT a FROM Answer a JOIN FETCH a.admin WHERE a.answerId = :answerId")
     Optional<Answer> findByIdWithAdmin(@Param("answerId") int answerId);
-
+	
+    long countByQuestion_QuestionId(int questionId);
 }

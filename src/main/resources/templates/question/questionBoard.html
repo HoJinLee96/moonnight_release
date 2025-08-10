@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{main/base}">
+
+<head>
+	<title>질문 게시판</title>
+	<style>
+		.container {
+			width: 80%;
+			margin: 0 auto;
+			padding: 20px;
+		}
+
+		.search-container {
+			display: flex;
+			justify-content: flex-end;
+			margin-bottom: 20px;
+		}
+
+		.search-container input {
+			padding: 5px;
+			margin-right: 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		.search-container button {
+			padding: 5px 10px;
+			border: none;
+			font-size: 14px;
+		}
+
+		.qna-table {
+			width: 100%;
+			margin-top: 20px;
+			border-collapse: separate;
+			/* 셀 간의 간격을 주기 위해 collapse 대신 separate 사용 */
+			border-spacing: 0;
+			/* 셀 사이의 기본 간격 제거 */
+			border-radius: 8px;
+			/* 테이블 전체에 둥근 모서리 적용 */
+			overflow: hidden;
+			/* 둥근 모서리가 내부 요소에 적용되도록 함 */
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+			/* 은은한 그림자 효과 추가 */
+		}
+
+		.qna-table th,
+		.qna-table td {
+			padding: 16px 12px;
+			/* 패딩을 늘려 여유 공간 확보 */
+			text-align: center;
+			border-bottom: 1px solid #e9ecef;
+			/* 각 행의 하단에만 선을 추가 */
+		}
+
+		/* a, th, td의 기본 border 제거 */
+		.qna-table th,
+		.qna-table td {
+			border-left: none;
+			border-right: none;
+			border-top: none;
+		}
+
+		.qna-table th {
+			background-color: #f8f9fa;
+			color: #495057;
+			font-weight: 600;
+			/* 글씨를 약간 더 굵게 */
+		}
+
+		.qna-table tbody tr {
+			transition: background-color 0.2s ease-in-out;
+			/* 부드러운 호버 효과 */
+		}
+
+		.qna-table tbody tr:hover {
+			background-color: #f1f3f5;
+			/* 호버 시 배경색 변경 */
+			cursor: pointer;
+		}
+
+		/* 마지막 행의 하단 border 제거 */
+		.qna-table tbody tr:last-child td {
+			border-bottom: none;
+		}
+
+		.write-button {
+			display: block;
+			width: 100px;
+			padding: 10px;
+			margin: 20px 0 0 auto;
+			text-align: center;
+			text-decoration: none;
+			border-radius: 5px;
+		}
+
+		.pagination {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: 20px;
+		}
+
+		.pagination button {
+			margin: 0 10px;
+			padding: 8px 16px;
+			border: 1px solid #ddd;
+			background-color: white;
+			cursor: pointer;
+		}
+
+		.pagination button:disabled {
+			cursor: not-allowed;
+			background-color: #e9ecef;
+		}
+
+		.pagination span {
+			margin: 0 10px;
+			font-weight: bold;
+		}
+	</style>
+</head>
+
+<main layout:fragment="content">
+	<div class="container">
+		<h2>질문 게시판</h2>
+
+		<div class="search-container">
+			<input type="text" id="searchInput" placeholder="제목으로 검색">
+			<button class="btn btn-primary-mini" id="searchBtn">검색</button>
+		</div>
+
+		<table class="qna-table">
+			<thead>
+				<tr>
+					<th>번호</th>
+					<th>답변상태</th>
+					<th>제목</th>
+					<th>답변 수</th>
+					<th>작성일</th>
+				</tr>
+			</thead>
+			<tbody id="question-table-body">
+				<!-- 로딩 시 표시될 내용 -->
+				<tr>
+					<td colspan="5">데이터를 불러오는 중입니다...</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<!-- 페이지네이션 -->
+		<div class="pagination">
+			<button id="prevPageBtn" disabled>이전</button>
+			<span id="currentPageSpan">1</span>
+			<button id="nextPageBtn">다음</button>
+		</div>
+
+		<a href="/question/register" class="btn btn-primary-mini write-button">글쓰기</a>
+	</div>
+</main>
+
+<th:block layout:fragment="script">
+	<script type="module">
+		// question.js에서 API 호출 함수들을 가져옵니다.
+		import {fetchQuestions, searchQuestions} from '/js/question.js';
+
+		// 상태 관리 변수
+		let currentPage = 0;
+		const pageSize = 10;
+		let currentQuery = '';
+
+		// DOM 요소
+		const tableBody = document.getElementById('question-table-body');
+		const searchInput = document.getElementById('searchInput');
+		const searchBtn = document.getElementById('searchBtn');
+		const prevPageBtn = document.getElementById('prevPageBtn');
+		const nextPageBtn = document.getElementById('nextPageBtn');
+		const currentPageSpan = document.getElementById('currentPageSpan');
+
+		/**
+		 * 테이블 내용을 렌더링하는 함수
+		 */
+		const renderTable = (questions) => {
+			tableBody.innerHTML = ''; // 테이블 초기화
+			if (!questions || questions.length === 0) {
+				tableBody.innerHTML = `<tr><td colspan="5">${currentQuery ? '검색 결과가 없습니다.' : '등록된 질문이 없습니다.'}</td></tr>`;
+				return;
+			}
+
+			questions.forEach(q => {
+				const row = document.createElement('tr');
+				row.style.cursor = 'pointer';
+				row.onclick = () => {location.href = `/question/${q.questionId}`;};
+
+				const statusText = q.questionStatus === 'PENDING' ? '답변 대기' : '답변 완료';
+				const formattedDate = new Date(q.createdAt).toISOString().split('T')[0];
+
+				row.innerHTML = `
+					<td>${q.questionId}</td>
+					<td>${statusText}</td>
+					<td>${q.title}</td>
+					<td>${q.answerCount}</td>
+					<td>${formattedDate}</td>
+				`;
+				tableBody.appendChild(row);
+			});
+		};
+
+		/**
+		 * 페이지네이션 버튼 상태를 업데이트하는 함수
+		 */
+		const updatePaginationButtons = (questionList) => {
+			// 이전 버튼: 현재 페이지가 0보다 크면 활성화
+			prevPageBtn.disabled = currentPage <= 0;
+			// 다음 버튼: 받아온 데이터가 페이지 크기와 같으면 다음 페이지가 있을 가능성이 있으므로 활성화
+			nextPageBtn.disabled = questionList.length < pageSize;
+
+			currentPageSpan.textContent = currentPage + 1;
+		};
+
+		/**
+		 * 데이터를 로드하고 화면을 갱신하는 메인 함수
+		 */
+		const loadData = async () => {
+			try {
+				tableBody.innerHTML = '<tr><td colspan="5">데이터를 불러오는 중입니다...</td></tr>';
+				const apiCall = currentQuery
+					? searchQuestions(currentQuery, currentPage, pageSize)
+					: fetchQuestions(currentPage, pageSize);
+
+				const questions = await apiCall;
+				renderTable(questions);
+				updatePaginationButtons(questions);
+
+			} catch (error) {
+				tableBody.innerHTML = '<tr><td colspan="5">데이터를 불러오는 데 실패했습니다.</td></tr>';
+				console.error("Data load failed:", error);
+			}
+		};
+
+		// --- 이벤트 리스너 설정 ---
+
+		// 검색 버튼 클릭
+		searchBtn.addEventListener('click', () => {
+			currentQuery = searchInput.value.trim();
+			currentPage = 0; // 검색 시 첫 페이지로 리셋
+			loadData();
+		});
+
+		// Enter 키로 검색
+		searchInput.addEventListener('keyup', (event) => {
+			if (event.key === 'Enter') {
+				searchBtn.click();
+			}
+		});
+
+		// 이전 페이지 버튼 클릭
+		prevPageBtn.addEventListener('click', () => {
+			if (currentPage > 0) {
+				currentPage--;
+				loadData();
+			}
+		});
+
+		// 다음 페이지 버튼 클릭
+		nextPageBtn.addEventListener('click', () => {
+			currentPage++;
+			loadData();
+		});
+
+		// 페이지 최초 로드
+		document.addEventListener('DOMContentLoaded', loadData);
+	</script>
+</th:block>
+
+</html>

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 public record QuestionCreateRequestDto(
 		
 	@NotBlank(message = "비밀번호를 입력해주세요.")
-	@Size(max = 4, message = "비밀번호는 4자를 넘을 수 없습니다.")
+	@Size(min = 4, max = 4, message = "비밀번호는 4자로 입력해주세요.")
 	String password,
 		
     @NotBlank(message = "제목을 입력해주세요.")

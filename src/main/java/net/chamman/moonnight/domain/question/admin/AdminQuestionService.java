@@ -12,14 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.chamman.moonnight.auth.crypto.Obfuscator;
-import net.chamman.moonnight.domain.answer.dto.AnswerResponseDto;
+import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerResponseDto;
 import net.chamman.moonnight.domain.question.Question;
 import net.chamman.moonnight.domain.question.Question.QuestionStatus;
 import net.chamman.moonnight.domain.question.QuestionRepository;
-import net.chamman.moonnight.domain.question.admin.dto.AdminQuestionDeleteRequestDto;
 import net.chamman.moonnight.domain.question.admin.dto.AdminQuestionModifyRequestDto;
-import net.chamman.moonnight.domain.question.admin.dto.AdminQuestionStatusUpdateRequestDto;
-import net.chamman.moonnight.domain.question.dto.QuestionResponseDto;
+import net.chamman.moonnight.domain.question.admin.dto.AdminQuestionResponseDto;
+import net.chamman.moonnight.domain.question.admin.dto.AdminQuestionVersionRequestDto;
 import net.chamman.moonnight.domain.question.dto.QuestionSimpleResponseDto;
 import net.chamman.moonnight.global.annotation.ActiveAdminOnly;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
@@ -52,9 +51,17 @@ public class AdminQuestionService {
                 .toList();
 	}
 	
+	@Transactional(readOnly = true)
+	public AdminQuestionResponseDto getQuestion(int questionId) {
+        Question question = questionRepository.findById(obfuscator.decode(questionId))
+                .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
+        
+		return convertToDto(question);
+	}
+	
 	@Transactional
 	@ActiveAdminOnly
-	public QuestionResponseDto modifyQuestion(int adminId, int questionId, AdminQuestionModifyRequestDto dto) {
+	public AdminQuestionResponseDto modifyQuestion(int adminId, int questionId, AdminQuestionModifyRequestDto dto) {
 
         Question question = findQuestionWithVersion(questionId, dto.version());
         
@@ -63,36 +70,36 @@ public class AdminQuestionService {
 		return convertToDto(question);
 	}
 	
-	@Transactional
-	@ActiveAdminOnly
-	public QuestionResponseDto updateQuestionStatus(int adminId, int questionId, AdminQuestionStatusUpdateRequestDto dto) {
-
-        Question question = findQuestionWithVersion(questionId, dto.version());
-		
-		question.updateStatus(dto.questionStatus());
-		
-		return convertToDto(question);
-	}
+//	@Transactional
+//	@ActiveAdminOnly
+//	public AdminQuestionResponseDto updateQuestionStatus(int adminId, int questionId, AdminQuestionStatusUpdateRequestDto dto) {
+//
+//        Question question = findQuestionWithVersion(questionId, dto.version());
+//		
+//		question.updateStatus(dto.questionStatus());
+//		
+//		return convertToDto(question);
+//	}
 	
 	@Transactional
 	@ActiveAdminOnly
-	public void deleteQuestion(int adminId, int questionId, AdminQuestionDeleteRequestDto dto) {
+	public void deleteQuestion(int adminId, int questionId, AdminQuestionVersionRequestDto dto) {
 
         Question question = findQuestionWithVersion(questionId, dto.version());
 		
 		question.updateStatus(QuestionStatus.DELETE);
 	}
 	
-    private QuestionResponseDto convertToDto(Question question) {
+    private AdminQuestionResponseDto convertToDto(Question question) {
         int encodedId = obfuscator.encode(question.getQuestionId());
-        List<AnswerResponseDto> answerDtos = question.getAnswers().stream()
-                .map(answer -> new AnswerResponseDto(
-                		obfuscator.encode(answer.getAnswerId()), // 서비스 계층에서 직접 인코딩!
-                        answer.getContent(),
-                        answer.getCreatedAt()
+        List<AdminAnswerResponseDto> answerDtos = question.getAnswers().stream()
+                .map(answer -> AdminAnswerResponseDto.from(
+                		answer,
+                		obfuscator.encode(answer.getAnswerId()),
+                		answer.getAdmin().getAdminId()
                 ))
                 .toList();
-        return QuestionResponseDto.from(question, encodedId, answerDtos);
+        return AdminQuestionResponseDto.from(question, encodedId, answerDtos);
     }
     
     private QuestionSimpleResponseDto convertToSimpleDto(Question question) {
@@ -101,7 +108,7 @@ public class AdminQuestionService {
     }
     
     private Question findQuestionWithVersion(int questionId, int version) {
-        Question question = questionRepository.findById(questionId)
+        Question question = questionRepository.findById(obfuscator.decode(questionId))
                 .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
         question.verifyVersion(version);
         return question;
