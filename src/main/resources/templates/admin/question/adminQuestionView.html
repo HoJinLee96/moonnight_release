@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/main/base}">
+
+<head>
+	<title>질문 보기</title>
+	<style>
+		.container {
+			width: 80%;
+			margin: 20px auto;
+		}
+
+		.hidden {
+			display: none !important;
+		}
+
+		/* 모달 스타일 */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.6);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.modal-content {
+			background: white;
+			padding: 30px;
+			border-radius: 8px;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+			text-align: center;
+			min-width: 300px;
+		}
+
+		.modal-content input {
+			width: calc(100% - 22px);
+			padding: 10px;
+			margin: 10px 0 20px 0;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		.modal-content button {
+			padding: 10px 20px;
+			cursor: pointer;
+		}
+
+		/* 질문 본문 스타일 */
+		.question-area {
+			border: 1px solid #ddd;
+			padding: 30px;
+			border-radius: 8px;
+		}
+
+		.question-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid #eee;
+			padding-bottom: 15px;
+			margin-bottom: 20px;
+		}
+
+		.question-title {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0;
+		}
+
+		.question-meta {
+			text-align: right;
+		}
+
+		.question-meta span,
+		.answer-item span {
+			display: block;
+			font-size: 14px;
+			color: #888;
+			width: 140px;
+		}
+
+		.question-status {
+			font-weight: bold;
+		}
+
+		.question-content {
+			min-height: 150px;
+			padding: 20px 0;
+			font-size: 16px;
+			line-height: 1.6;
+			white-space: pre-wrap;
+		}
+
+		/* pre-wrap으로 줄바꿈 유지 */
+
+		#edit-form {
+			margin-top: 40px;
+		}
+
+		/* 수정 모드 스타일 */
+		#edit-form input,
+		#edit-form textarea {
+			width: calc(100% - 22px);
+			padding: 10px;
+			font-size: 16px;
+		}
+
+		#edit-form textarea {
+			height: 150px;
+			resize: vertical;
+			margin: 20px 0;
+		}
+
+		/* 버튼 컨테이너 */
+		.button-container {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 20px;
+		}
+
+		.delete-button-container {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			margin-top: 20px;
+		}
+
+		.button-container button {
+			padding: 8px 16px;
+			cursor: pointer;
+		}
+
+		.list-btn {
+			padding: 8px 16px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		/* 답변 영역 스타일 */
+		.answers-section {
+			margin-top: 40px;
+		}
+
+		.answer-item p {
+			margin: 0;
+		}
+
+		#view-mode {
+			margin-top: 40px;
+		}
+
+		.answer-item {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			background-color: #f9f9f9;
+			border: 1px solid #e9e9e9;
+			border-radius: 5px;
+			padding: 15px;
+			margin-bottom: 10px;
+		}
+
+		.answer-body {
+			flex-grow: 1;
+		}
+
+		.answer-content {
+			white-space: pre-wrap;
+			margin: 0;
+		}
+
+		.answer-meta {
+			text-align: right;
+			font-size: 13px;
+			color: #6c757d;
+			margin-left: 20px;
+			flex-shrink: 0;
+		}
+
+		.answer-meta span {
+			display: block;
+		}
+
+		.answer-actions {
+			margin-top: 10px;
+			justify-content: right;
+			display: flex;
+		}
+
+		.answer-actions button {
+			font-size: 12px;
+			padding: 4px 8px;
+			margin-left: 5px;
+		}
+
+		.answer-edit-textarea {
+			width: 100%;
+			min-height: 80px;
+			box-sizing: border-box;
+		}
+
+		.answer-form-section {
+			margin-top: 30px;
+			padding-top: 30px;
+			border-top: 1px solid #eee;
+		}
+
+		#answer-form textarea {
+			width: 100%;
+			min-height: 120px;
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			resize: vertical;
+			box-sizing: border-box;
+		}
+
+		#answer-form .button-container {
+			margin-top: 10px;
+		}
+	</style>
+</head>
+
+<main layout:fragment="content">
+	<div class="container">
+
+		<!-- 삭제 확인 모달 -->
+		<div id="delete-modal" class="modal-overlay hidden">
+			<div class="modal-content">
+				<h3>질문 삭제</h3>
+				<p>해당 질문을 정말 삭제 하시겠습니까?</p>
+				<form id="delete-form">
+					<div class="delete-button-container">
+						<button type="button" class="btn btn-secondary" id="cancel-delete-btn">취소</button>
+						<button type="submit" class="btn btn-primary-mini">삭제 확인</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- 질문 내용이 표시될 영역 -->
+		<div id="question-area" class="question-area" th:attr="data-question-id=${questionId}">
+			<a href="/admin/question" class="btn btn-primary-mini list-btn" style="text-decoration: none;">목록</a>
+			<!-- 조회 모드 -->
+			<div id="view-mode">
+				<div class="question-header">
+					<h2 id="question-title" class="question-title"></h2>
+					<div class="question-meta">
+						<span id="question-id" class="question-id"></span>
+						<span id="question-status" class="question-status"></span>
+						<span id="question-createdAt"></span>
+						<span id="question-updatedAt"></span>
+					</div>
+				</div>
+				<div id="question-content" class="question-content"></div>
+			</div>
+
+			<!-- 수정 모드 -->
+			<form id="edit-form" class="hidden">
+				<input type="text" id="edit-title" required>
+				<textarea id="edit-content" required></textarea>
+			</form>
+
+			<!-- 버튼 영역 -->
+			<div class="button-container">
+				<button id="edit-btn" class="btn btn-secondary">수정</button>
+				<button id="delete-btn" class="btn btn-secondary btn-danger">삭제</button>
+				<button id="cancel-edit-btn" class="btn btn-secondary hidden">취소</button>
+				<button id="save-btn" class="btn btn-primary-mini hidden">저장</button>
+			</div>
+		</div>
+
+		<!-- 답변 표시 영역 -->
+		<div id="answers-section" class="answers-section hidden">
+			<h3>답변</h3>
+			<div id="answers-container"></div>
+		</div>
+		<div id="answer-form-section" class="answer-form-section hidden">
+			<h3>답변 작성</h3>
+			<form id="answer-form">
+				<textarea id="answer-content" placeholder="답변 내용을 입력하세요." required></textarea>
+				<div class="button-container">
+					<button type="submit" class="btn btn-primary-mini">답변 등록</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</main>
+
+<th:block layout:fragment="script">
+	<script type="module">
+		import {getQuestions, modifyQuestionByAdmin, deleteQuestionByAdmin} from '/js/admin/adminQuestion.js';
+		import {registerAnswerByAdmin, modifyAnswerByAdmin, deleteAnswerByAdmin} from '/js/admin/adminAnswer.js';
+
+		// --- 상태 관리 ---
+		let currentQuestionData = null; // 원본 질문 데이터 저장 (version 포함)
+
+		// --- DOM 요소 ---
+		const deleteModal = document.getElementById('delete-modal');
+		const questionArea = document.getElementById('question-area');
+		const answersSection = document.getElementById('answers-section');
+		const questionId = questionArea.dataset.questionId;
+
+		// 조회/수정 모드 관련 요소
+		const viewMode = document.getElementById('view-mode');
+		const editForm = document.getElementById('edit-form');
+		const editBtn = document.getElementById('edit-btn');
+		const saveBtn = document.getElementById('save-btn');
+		const cancelEditBtn = document.getElementById('cancel-edit-btn');
+		const deleteBtn = document.getElementById('delete-btn');
+
+		const answerFormSection = document.getElementById('answer-form-section');
+		const answerForm = document.getElementById('answer-form');
+		const answerContentInput = document.getElementById('answer-content');
+		const answersContainer = document.getElementById('answers-container');
+
+		// --- 렌더링 함수 ---
+		const renderQuestion = (data) => {
+			currentQuestionData = data; // 데이터와 version 저장
+
+			// 상태 맵
+			const statusMap = {'PENDING': '답변 대기 중', 'ANSWER': '답변 완료', 'DELETE': '삭제된 질문'};
+
+			// 조회 모드 데이터 채우기
+			document.getElementById('question-id').textContent = `질문 번호: ${data.questionId}`;
+			document.getElementById('question-title').textContent = data.title;
+			document.getElementById('question-status').textContent = statusMap[data.questionStatus] || data.questionStatus;
+			document.getElementById('question-createdAt').textContent = `작성일: ${new Date(data.createdAt).toLocaleDateString()}`;
+			const updatedAtValue = data.updatedAt;
+			document.getElementById('question-updatedAt').textContent = updatedAtValue ? `수정일: ${new Date(data.updatedAt).toLocaleDateString()}` : '';
+			document.getElementById('question-content').textContent = data.content;
+
+			// 수정 모드 폼 채우기
+			document.getElementById('edit-title').value = data.title;
+			document.getElementById('edit-content').value = data.content;
+
+			// 답변 렌더링
+			answersContainer.innerHTML = '';
+			if (data.answers && data.answers.length > 0) {
+				answersSection.classList.remove('hidden');
+				data.answers.forEach(answer => {
+					const answerEl = document.createElement('div');
+					answerEl.className = 'answer-item';
+					answerEl.dataset.answerId = answer.answerId;
+					answerEl.dataset.version = answer.version; // version 정보 저장
+
+					// isMine 값에 따라 수정/삭제 버튼 추가
+					const actionButtons = answer.isMine ? `
+									<div class="answer-actions">
+										<button class="btn btn-secondary btn-sm" data-action="edit">수정</button>
+										<button class="btn btn-danger btn-sm" data-action="delete">삭제</button>
+									</div>
+								` : '';
+
+					answerEl.innerHTML = `
+									<div class="answer-body">
+										<p class="answer-content">${answer.content}</p>
+									</div>
+									<div class="answer-meta">
+										<span>작성자: ${answer.authorName}</span>
+										<span>작성일: ${new Date(answer.createdAt).toLocaleDateString()}</span>
+										${actionButtons}
+									</div>
+								`;
+					answersContainer.appendChild(answerEl);
+				});
+			} else {
+				answersSection.classList.add('hidden');
+			}
+			answerFormSection.classList.remove('hidden');
+		};
+
+		// --- UI 모드 전환 함수 ---
+		const toggleEditMode = (isEditing) => {
+			viewMode.classList.toggle('hidden', isEditing);
+			editForm.classList.toggle('hidden', !isEditing);
+
+			editBtn.classList.toggle('hidden', isEditing);
+			deleteBtn.classList.toggle('hidden', isEditing);
+			saveBtn.classList.toggle('hidden', !isEditing);
+			cancelEditBtn.classList.toggle('hidden', !isEditing);
+		};
+
+		const reloadData = async () => {
+			try {
+				const data = await getQuestions(questionId);
+				renderQuestion(data);
+			} catch (error) {
+				alert(error.message);
+			}
+
+		};
+
+
+
+		// --- 이벤트 핸들러 ---
+		document.addEventListener('DOMContentLoaded', () => {
+
+			reloadData();
+
+			// 2. 답변 등록 이벤트 핸들러
+			answerForm.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const content = answerContentInput.value.trim();
+				if (!content) {
+					return alert("답변 내용을 입력해주세요.");
+				}
+
+				const createData = {
+					questionId: questionId,
+					content: content
+				};
+
+				try {
+					// 답변 등록 API 호출
+					await registerAnswerByAdmin(createData);
+					alert("답변이 등록되었습니다.");
+					answerContentInput.value = ''; // 입력창 비우기
+
+					// 데이터를 다시 로드하여 화면 전체를 갱신
+					const updatedData = await getQuestions(questionId);
+					renderQuestion(updatedData);
+
+				} catch (error) {
+					console.error("Answer registration failed:", error);
+					// 에러 alert는 adminAnswer.js에서 처리
+				}
+			});
+
+			// 3. 답변 수정/삭제 이벤트 (이벤트 위임)
+			answersContainer.addEventListener('click', async (e) => {
+				const target = e.target;
+				const action = target.dataset.action;
+				if (!action) return;
+
+				const answerItem = target.closest('.answer-item');
+				const answerId = answerItem.dataset.answerId;
+				const version = parseInt(answerItem.dataset.version, 10);
+
+				if (action === 'delete') {
+					if (confirm('정말로 이 답변을 삭제하시겠습니까?')) {
+						try {
+							await deleteAnswerByAdmin(answerId, {version});
+							alert('답변이 삭제되었습니다.');
+							await reloadData();
+						} catch (error) {
+							console.error('Answer deletion failed:', error);
+						}
+					}
+				} else if (action === 'edit') {
+					const bodyDiv = answerItem.querySelector('.answer-body');
+					const contentP = bodyDiv.querySelector('.answer-content');
+					const currentContent = contentP.textContent;
+
+					bodyDiv.innerHTML = `
+									<textarea class="answer-edit-textarea">${currentContent}</textarea>
+									<div class="answer-actions">
+										<button class="btn btn-secondary btn-sm" data-action="cancel">취소</button>
+										<button class="btn btn-primary-mini btn-sm" data-action="save">저장</button>
+									</div>
+								`;
+				} else if (action === 'cancel') {
+					await reloadData();
+				} else if (action === 'save') {
+					const textarea = answerItem.querySelector('.answer-edit-textarea');
+					const newContent = textarea.value.trim();
+					if (!newContent) return alert('수정할 내용을 입력해주세요.');
+
+					try {
+						await modifyAnswerByAdmin(answerId, {content: newContent, version});
+						alert('답변이 수정되었습니다.');
+						await reloadData();
+					} catch (error) {
+						console.error('Answer modification failed:', error);
+					}
+				}
+			});
+
+			// 3. 질문 수정 버튼 클릭
+			editBtn.addEventListener('click', () => toggleEditMode(true));
+
+			// 4. 질문 수정 취소 버튼 클릭
+			cancelEditBtn.addEventListener('click', () => {
+				// 원본 데이터로 폼 복원
+				document.getElementById('edit-title').value = currentQuestionData.title;
+				document.getElementById('edit-content').value = currentQuestionData.content;
+				toggleEditMode(false);
+			});
+
+			// 5. 질문 저장 버튼 클릭 (수정 완료)
+			saveBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+
+				const modifyData = {
+					title: document.getElementById('edit-title').value,
+					content: document.getElementById('edit-content').value,
+					version: currentQuestionData.version
+				};
+
+				const updatedData = await modifyQuestionByAdmin(questionId, modifyData);
+				alert('수정되었습니다.');
+				renderQuestion(updatedData); // 서버로부터 받은 최신 데이터로 화면 갱신
+				toggleEditMode(false); // 조회 모드로 전환
+			});
+
+			// 6. 질문 삭제 버튼 클릭
+			deleteBtn.addEventListener('click', () => deleteModal.classList.remove('hidden'));
+
+			// 7. 질문 삭제 취소
+			document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+				deleteModal.classList.add('hidden');
+			});
+
+			// 8. 질문 최종 삭제 확인
+			document.getElementById('delete-form').addEventListener('submit', async (e) => {
+				e.preventDefault();
+
+				const deleteData = {
+					version: currentQuestionData.version
+				};
+
+				await deleteQuestionByAdmin(questionId, deleteData);
+				alert('삭제되었습니다.');
+				location.href = '/admin/question'; // 목록으로 이동
+			});
+		});
+	</script>
+</th:block>
+
+</html>

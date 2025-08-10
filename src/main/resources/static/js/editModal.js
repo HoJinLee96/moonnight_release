@@ -19,7 +19,6 @@ export function openEditModal(estimateData, config) {
 	const editState = JSON.parse(JSON.stringify(estimateData));
 	let isPhoneVerifiedInModal = !!editState.phoneAgree;
 	let isEmailVerifiedInModal = !!editState.emailAgree;
-	console.log(editState);
 
 	// --- 3. 모달 HTML 동적 생성 ---
 	const modalOverlay = document.createElement('div');
@@ -261,8 +260,6 @@ export function openEditModal(estimateData, config) {
 			// 설정으로 넘겨받은 API 함수를 호출!
 			const json = await config.updateApiFunction(editState.estimateId, formData);
 
-			console.log("서버로부터 받은 응답(json):", json); 
-			
 			config.modalOverlayParents.removeChild(modalOverlay);
 
 			// 설정으로 넘겨받은 콜백 함수를 실행!

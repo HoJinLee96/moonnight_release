@@ -652,7 +652,6 @@
 
 
 		document.addEventListener('DOMContentLoaded', function () {
-			console.log(window.cleaningServices);
 			// --- 1. DOM 요소 가져오기 ---
 			const tabLinks = document.querySelectorAll('.tab-link');
 			const tabContents = document.querySelectorAll('.tab-content');
@@ -879,12 +878,13 @@
 				resultsContainer.innerHTML = ''; // 초기화
 				const detailView = document.createElement('div');
 				detailView.className = 'estimate-detail-view';
+				
 
 				// 이미지 갤러리 HTML 생성
 				const imagesHtml = est.images && est.images.length > 0
 					? est.images.map(src => `<img src="${src}" alt="견적 이미지">`).join('')
 					: '<span>첨부된 이미지가 없습니다.</span>';
-
+					
 				detailView.innerHTML = `
 								<div class="detail-header">
 						            ${createStatusBadge(est.estimateStatus)}
@@ -903,7 +903,7 @@
 								<div class="detail-section">
 									<h4>주소</h4>
 									<div class="detail-info">
-										(${est.postcode}) ${est.mainAddress}<br>${est.detailAddress}
+										${est.postcode ? `(${est.postcode})` : ''} ${est.mainAddress}<br>${est.detailAddress ? est.detailAddress : ''}
 									</div>
 								</div>
 								<div class="detail-section">

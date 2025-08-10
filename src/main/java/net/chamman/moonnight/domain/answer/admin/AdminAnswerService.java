@@ -35,7 +35,7 @@ public class AdminAnswerService {
 	@Transactional
 	public AdminAnswerResponseDto registerAnswer(int adminId, AdminAnswerCreateRequestDto dto, String clientIp) {
 		Admin admin = adminService.getActiveAdminByAdminId(adminId);
-        Question question = questionRepository.findById(dto.questionId())
+        Question question = questionRepository.findById(obfuscator.decode(dto.questionId()))
                 .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
         
 		Answer answer = Answer.builder()
@@ -45,6 +45,8 @@ public class AdminAnswerService {
 	            .clientIp(clientIp)
 	            .build();
 		answerRepository.save(answer);
+		
+		question.markAsAnswered();
 		return convertToDto(answer, adminId);
 	}
 	
@@ -62,10 +64,14 @@ public class AdminAnswerService {
 	public void deleteAnswer(int adminId, int answerId, AdminAnswerDeleteRequestDto dto) {
 		Answer answer = findAnswerWithAuthById(adminId, answerId, dto.version());
 		answerRepository.delete(answer);
+		Question question = answer.getQuestion();
+		if(answerRepository.countByQuestion_QuestionId(question.getQuestionId()) == 0) {
+			question.revertToPending();
+		}
 	}
 	
     private Answer findAnswerWithAuthById(int adminId, int answerId, int version) {
-    	Answer answer = answerRepository.findByIdWithAdmin(answerId)
+    	Answer answer = answerRepository.findByIdWithAdmin(obfuscator.decode(answerId))
                 .orElseThrow(() -> new NoSuchDataException(ANSWER_NOT_FOUND));
         if (!answer.verifyAdmin(adminId)) {
             throw new ForbiddenException(AUTHORIZATION_FAILED, "답변 작성자가 일치하지 않음.");

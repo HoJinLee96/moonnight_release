@@ -355,7 +355,6 @@
 					await verifySmsCode(phone, code);
 					const json = await isEmailExistForFindEmail(phone);
 					const data = json.data;
-					console.log(data);
 					stopCountdown(timerDisplay);
 
 					if (data) {

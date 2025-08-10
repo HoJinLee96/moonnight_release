@@ -1,6 +1,6 @@
 package net.chamman.moonnight.domain.question.admin.dto;
 
-public record AdminQuestionDeleteRequestDto(
+public record AdminQuestionVersionRequestDto(
 	    int version
 		) {
 

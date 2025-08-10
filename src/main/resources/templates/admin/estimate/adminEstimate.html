@@ -763,7 +763,7 @@
 					<p><strong>신청자:</strong> ${safeData.name ?? ''}</p>
 					<p><strong>연락처:</strong> ${safeData.phone ?? ''}</p>
 					<p><strong>이메일:</strong> ${safeData.email ?? ''}</p>
-					<p><strong>주소:</strong> (${safeData.postcode ?? ''}) ${safeData.mainAddress ?? ''} ${safeData.detailAddress ?? ''}</p>
+					<p><strong>주소:</strong> ${safeData.postcode ? `(${safeData.postcode})` : ''} ${safeData.mainAddress ?? ''} ${safeData.detailAddress ?? ''}</p>
 					<p><strong>서비스:</strong> ${safeData.cleaningService ?? ''}</p>
 					<p><strong>신청일:</strong> ${formatDate(safeData.createdAt)}</p>
 					<p><strong>내용:</strong><br>${(safeData.content ?? '').replace(/\n/g, '<br>')}</p>
@@ -781,8 +781,6 @@
 				openEditModal(safeData, {
 					updateApiFunction: updateEstimate,
 					onSaveSuccess: (updatedEstimate) => {
-						// 1. 데이터 확인용 로그
-						console.log("onSaveSuccess로 전달된 updatedEstimate:", updatedEstimate);
 
 						dom.modal.style.display = 'none';
 
@@ -826,7 +824,6 @@
 			const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString('ko-KR') : '날짜 정보 없음';
 
 			const commentsHtml = comments.map(comment => {
-				console.log(comment);
 				// isMine 값에 따라 버튼의 표시 여부를 결정
 				const actionButtonsHtml = comment.isMine ? `
 						<div class="comment-actions">
@@ -1090,8 +1087,6 @@
 			const estimateStatus = state.currentStatus === 'RECEIVE' ? 'IN_PROGRESS' : 'COMPLETE';
 			const estimateStatusLabel = statusLabels[estimateStatus];
 			const idsToUpdate = Array.from(state.selectedIds);
-			console.log(idsToUpdate);
-			console.log(estimateStatus);
 			if (confirm(`${idsToUpdate.length}개의 견적을 '${estimateStatusLabel}' 상태로 변경하시겠습니까?`)) {
 				try {
 					await updateMultipleEstimateStatus(idsToUpdate, estimateStatus);

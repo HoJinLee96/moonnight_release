@@ -9,6 +9,7 @@ public record AdminAnswerResponseDto(
 		String authorName,
 		boolean isMine,
 		String content,
+		int version,
 		LocalDateTime createdAt
 		) {
 	public static AdminAnswerResponseDto from(Answer answer, int encodedId, int adminId) {
@@ -19,6 +20,7 @@ public record AdminAnswerResponseDto(
 				authorName,
 				isMine,
 				answer.getContent(),
+				answer.getVersion(),
 				answer.getCreatedAt()
 				);
 	}

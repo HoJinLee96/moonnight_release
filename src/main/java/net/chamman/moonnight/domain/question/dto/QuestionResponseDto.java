@@ -13,6 +13,8 @@ public record QuestionResponseDto(
     String content,
     QuestionStatus questionStatus,
     LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    int version,
     List<AnswerResponseDto> answers
 ) {
 	  public static QuestionResponseDto from(Question question, int encodedId, List<AnswerResponseDto> answerDtos) {
@@ -22,6 +24,8 @@ public record QuestionResponseDto(
 	            question.getContent(),
 	            question.getQuestionStatus(),
 	            question.getCreatedAt(),
+	            question.getUpdatedAt(),
+	            question.getVersion(),
 	            answerDtos
 	        );
 	    }

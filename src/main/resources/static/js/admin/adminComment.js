@@ -1,5 +1,3 @@
-// /js/admin/adminComment.js
-
 const BASE_URL = '/api/admin/comment';
 
 /**
@@ -55,8 +53,6 @@ export const createComment = async (commentData) => {
  * @returns {Promise<object>} - 수정된 댓글 객체
  */
 export const updateComment = async (commentId, newText) => {
-	console.log(commentId);
-	console.log(newText);
 	const response = await fetch(`${BASE_URL}/private/${commentId}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },

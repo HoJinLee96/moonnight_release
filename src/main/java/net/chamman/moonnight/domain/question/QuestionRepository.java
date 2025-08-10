@@ -13,7 +13,7 @@ import net.chamman.moonnight.domain.question.Question.QuestionStatus;
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Integer> {
 
-    @Query("SELECT q FROM Question q JOIN FETCH q.answers WHERE q.id = :questionId")
+    @Query("SELECT q FROM Question q LEFT JOIN FETCH q.answers WHERE q.questionId = :questionId")
     Optional<Question> findByIdWithAnswers(int questionId);
     
     Page<Question> findAll(Pageable pageable);
