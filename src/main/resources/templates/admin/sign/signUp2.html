@@ -87,7 +87,7 @@
 		}
 
 		.timer {
-			width: 35px;
+			width: 50px;
 			position: absolute;
 			font-size: 14px;
 			right: 0px;
@@ -276,7 +276,7 @@
 				<label for="phone" class="form-label">휴대폰 번호</label>
 				<div class="input-with-button">
 					<input type="text" id="phone" name="phone" class="form-input" required maxlength="14">
-					<button class="btn btn-secondary" id="sendSmsButton" type="button">인증번호 발송</button>
+					<button class="btn btn-primary-mini" id="sendSmsButton" type="button">인증번호 발송</button>
 				</div>
 				<span id="phoneMessage" class="feedback-message"></span>
 			</div>
@@ -315,8 +315,7 @@
 		import {initPhoneFormatting, initBirthFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {validate, ValidationError} from '/js/validate.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
-		import {signUpStep2} from '/js/admin/adminSign.js';
-		import {isPhoneExist} from '/js/admin/admin.js';
+		import {isPhoneExistForSignUp, signUpStep2} from '/js/admin/adminSign.js';
 		import {initAddressSearch} from '/js/address-api.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
@@ -357,7 +356,7 @@
 				try {
 					const phone = phoneInput.value;
 					validate('phone', phone); // 클라이언트 유효성 검사
-					await isPhoneExist(phone); // 휴대폰 중복 검사 API
+					await isPhoneExistForSignUp(phone); // 휴대폰 중복 검사 API
 					await sendSms(phone); // 인증번호 발송 API
 
 					alert('인증번호가 발송되었습니다.');

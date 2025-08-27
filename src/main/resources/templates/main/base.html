@@ -17,7 +17,7 @@
 			--font-size-base: 16px;
 			--layout-min-width: 940px;
 			--layout-max-width: 1920px;
-			--layout-min-height: 650px;
+			--layout-min-height: 750px;
 		}
 
 		/* body는 이제 여백과 기본 폰트 설정만 담당 */
@@ -50,9 +50,13 @@
 			cursor: pointer;
 			font-size: 14px;
 			font-weight: bold;
-			transition: all 0.2s ease;
+			transition: all 0.3s ease;
 			flex-shrink: 0;
 			text-decoration: none;
+		}
+
+		.btn:hover:not(:disabled) {
+			transform: translateY(-2px);
 		}
 
 		.btn:disabled {
@@ -89,16 +93,16 @@
 		.btn-secondary:hover:not(:disabled) {
 			background-color: #c7cacc;
 		}
-		
+
 		.btn-tertiary {
 			background-color: var(--border-color);
 			color: var(--main-text-color-gray);
 		}
-		
+
 		.btn-tertiary:hover:not(:disabled) {
 			background-color: #e2e2e2;
 		}
-		
+
 		.btn-outline {
 			background-color: white;
 			color: #20367a;

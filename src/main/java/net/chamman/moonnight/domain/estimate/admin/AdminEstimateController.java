@@ -5,7 +5,9 @@ import static net.chamman.moonnight.global.exception.HttpStatusCode.READ_SUCCESS
 import static net.chamman.moonnight.global.exception.HttpStatusCode.UPDATE_SUCCESS;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,13 +30,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
+import net.chamman.moonnight.auth.crypto.Obfuscator;
+import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.EstimateQueryRepository;
-import net.chamman.moonnight.domain.estimate.dto.EstimateRequestDto;
+import net.chamman.moonnight.domain.estimate.admin.dto.EstimateSearchRequestDto;
+import net.chamman.moonnight.domain.estimate.admin.dto.EstimateSearchResponseDto;
+import net.chamman.moonnight.domain.estimate.admin.dto.EstimateUpdateStatusRequestDto;
 import net.chamman.moonnight.domain.estimate.dto.EstimateResponseDto;
-import net.chamman.moonnight.domain.estimate.dto.EstimateSearchRequestDto;
-import net.chamman.moonnight.domain.estimate.dto.EstimateSearchResponseDto;
-import net.chamman.moonnight.domain.estimate.dto.UpdateMultipleEstimateStatusRequestDto;
+import net.chamman.moonnight.domain.estimate.dto.EstimateUpdateRequestDto;
 import net.chamman.moonnight.global.annotation.ImageConstraint;
 import net.chamman.moonnight.global.security.principal.CustomAdminDetails;
 import net.chamman.moonnight.global.util.ApiResponseDto;
@@ -48,6 +52,7 @@ public class AdminEstimateController {
 	private final EstimateQueryRepository estimateQueryRepository;
 	private final AdminEstimateService adminEstimateService;
 	private final ApiResponseFactory apiResponseFactory;
+	private final Obfuscator obfuscator;
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/private/search")
@@ -62,8 +67,9 @@ public class AdminEstimateController {
 
 	@GetMapping("/private/{id}")
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> getEstimateDetails(@PathVariable Integer id) {
-		EstimateResponseDto estimateResponseDto = adminEstimateService.getEstimateById(id);
-		return ResponseEntity.ok(apiResponseFactory.success(READ_SUCCESS, estimateResponseDto));
+		Estimate estimate = adminEstimateService.getEstimateById(id);
+		return ResponseEntity
+				.ok(apiResponseFactory.success(READ_SUCCESS, EstimateResponseDto.fromEntity(estimate, obfuscator)));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
@@ -71,49 +77,52 @@ public class AdminEstimateController {
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateEstimateByAdmin(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
 			@PathVariable("estimateId") int encodedEstimateId,
-			@Valid @RequestPart EstimateRequestDto estimateRequestDto,
+			@Valid @RequestPart EstimateUpdateRequestDto dto,
 			@ImageConstraint @RequestPart(value = "images", required = false) List<MultipartFile> images,
 			HttpServletRequest request) throws IOException {
 
-		EstimateResponseDto estimateResponseDto = adminEstimateService.updateEstimate(encodedEstimateId,
-				estimateRequestDto, images);
+		Estimate estimate = adminEstimateService.updateEstimate(encodedEstimateId, dto, images);
 
-		log.debug("* estimateResponseDto: [{}]", estimateResponseDto);
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
+		return ResponseEntity
+				.ok(apiResponseFactory.success(UPDATE_SUCCESS, EstimateResponseDto.fromEntity(estimate, obfuscator)));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
-	@PatchMapping("/private/update/status/{estimateId}")
+	@PatchMapping("/private/update/status")
 	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateEstimateStatusByAdmin(
-			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, @PathVariable("estimateId") int encodedEstimateId,
-			@RequestBody EstimateStatus estimateStatus, HttpServletRequest request) {
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
+			@RequestBody EstimateUpdateStatusRequestDto dto, HttpServletRequest request) {
 
-		EstimateResponseDto estimateResponseDto = adminEstimateService.updateEstimateStatus(encodedEstimateId,
-				estimateStatus);
+		Estimate estimate = adminEstimateService.updateEstimateStatus(dto);
 
-		log.debug("* estimateResponseDto: [{}]", estimateResponseDto);
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, estimateResponseDto));
+		return ResponseEntity
+				.ok(apiResponseFactory.success(UPDATE_SUCCESS, EstimateResponseDto.fromEntity(estimate, obfuscator)));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@PatchMapping("/private/update/status/bulk")
-	public ResponseEntity<ApiResponseDto<EstimateResponseDto>> updateMultipleEstimateStatus(
-			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, @RequestBody UpdateMultipleEstimateStatusRequestDto dto,
-			HttpServletRequest request) {
+	public ResponseEntity<ApiResponseDto<List<EstimateResponseDto>>> updateMultipleEstimateStatus(
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
+			@RequestBody List<EstimateUpdateStatusRequestDto> dtoList, HttpServletRequest request) {
 
-		log.debug("* UpdateMultipleEstimateStatusDto: [{}]", dto);
+		log.debug("* List<EstimateUpdateStatusRequestDto>: [{}]", dtoList);
 
-		adminEstimateService.updateMultipleEstimateStatus(dto.estimateIds(), dto.estimateStatus());
+		List<Estimate> list = adminEstimateService.updateMultipleEstimateStatus(dtoList);
+		List<EstimateResponseDto> body = new ArrayList<>();
+		if (!list.isEmpty()) {
+			body = list.stream().map(e -> EstimateResponseDto.fromEntity(e, obfuscator)).collect(Collectors.toList());
+		}
 
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, null));
+		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, body));
 	}
 
 	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/private/{estimateId}")
-	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAdmin(@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
-			@PathVariable("estimateId") int encodedEstimateId) {
+	public ResponseEntity<ApiResponseDto<Void>> deleteEstimateByAdmin(
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
+			@PathVariable("estimateId") int encodedEstimateId, @RequestParam int version) {
 
-		adminEstimateService.deleteEstimate(encodedEstimateId);
+		adminEstimateService.deleteEstimate(encodedEstimateId, version);
 
 		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
 	}

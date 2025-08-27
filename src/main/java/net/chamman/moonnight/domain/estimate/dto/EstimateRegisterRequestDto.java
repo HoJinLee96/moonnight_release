@@ -1,16 +1,12 @@
 package net.chamman.moonnight.domain.estimate.dto;
 
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
-import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 
-public record EstimateRequestDto(
+public record EstimateRegisterRequestDto(
     
     @NotBlank(message = "validation.user.name.required")
     @Pattern(regexp = "^[가-힣a-zA-Z0-9\\s-]+$", message = "validation.user.name.invalid")
@@ -24,9 +20,6 @@ public record EstimateRequestDto(
     @Pattern(regexp = "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "validation.user.email.invalid")
     @Size(max = 50, message = "validation.user.email.length")
     String email,
-    
-    boolean phoneAgree,
-    boolean emailAgree,
     
     @Size(max = 5, message = "validation.address.postcode.length")
     String postcode,
@@ -44,25 +37,7 @@ public record EstimateRequestDto(
     @Size(max = 5000, message = "validation.estimate.content.length")
     String content,
     
-    List<String> deletedImagesPath
+    int version
     ) {
   
-  public Estimate toEntity(List<String> imagesPath, String clientIp) {
-    return Estimate.builder()
-        .name(name)
-        .phone(phone)
-        .email(email)
-        .emailAgree(emailAgree)
-        .phoneAgree(phoneAgree)
-        .postcode(postcode)
-        .mainAddress(mainAddress)
-        .detailAddress(detailAddress)
-        .cleaningService(cleaningService.name())
-        .content(content)
-        .imagesPath(imagesPath)
-        .estimateStatus(EstimateStatus.RECEIVE)
-        .clientIp(clientIp)
-        .build();
-  }
-
 }

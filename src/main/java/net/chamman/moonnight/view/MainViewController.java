@@ -36,20 +36,11 @@ public class MainViewController {
 	public String showReview(HttpServletRequest req, HttpServletResponse res) {
 		return "review";
 	}
-
-	@GetMapping("/find/email")
-	public String showFindEmail(HttpServletRequest req, HttpServletResponse res) {
-		return "find/findEmail";
+	
+	@GetMapping("/serviceCenter")
+	public String showServiceCenter(HttpServletRequest req, HttpServletResponse res) {
+		return "serviceCenter";
 	}
 
-	@GetMapping("/find/password")
-	public String showFindPassword(HttpServletRequest req, HttpServletResponse res) {
-		return "find/findPassword";
-	}
-
-	@GetMapping("/update/password/blank")
-	public String showUpdatePasswordBlank(HttpServletRequest req, HttpServletResponse res) {
-		return "updatePasswordBlank";
-	}
 
 }

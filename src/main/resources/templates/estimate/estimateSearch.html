@@ -5,14 +5,18 @@
 <head>
 	<title>견적서 조회</title>
 	<style>
+		main {
+			padding: 50px 0px;
+		}
+
 		/* 전체 컨테이너 스타일 */
 		.search-container {
 			max-width: 800px;
-			margin: 50px auto;
+			margin: 0px auto;
 			padding: 40px;
-			border: 1px solid #ddd;
+			border: 1px solid var(--border-color, #efefef);
 			border-radius: 10px;
-			background-color: #f9f9f9;
+			background-color: #fff;
 			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 			position: relative;
 			animation: fadeIn 0.5s;
@@ -66,7 +70,7 @@
 			margin-bottom: 20px;
 		}
 
-		.form-group label {
+		.form-group label:not([for="email-agreement"], [for="phone-agreement"]) {
 			display: block;
 			margin-bottom: 8px;
 			font-weight: bold;
@@ -90,6 +94,7 @@
 			gap: 10px;
 			align-items: center;
 			/* 세로 중앙 정렬 추가 */
+			position: relative;
 		}
 
 		.input-with-button input {
@@ -101,11 +106,12 @@
 		}
 
 		#verifyAuthCodeBtn {
-			min-width: 70px;
+			min-width: 130px;
 		}
 
 		.timer {
-			width: 35px;
+			position: absolute;
+			right: 140px;
 			color: red;
 			font-weight: bold;
 			font-size: 14px;
@@ -147,8 +153,8 @@
 		/* ★★★ 결과 표시 컨테이너 스타일 ★★★ */
 		#estimate-results-container {
 			max-width: 800px;
-			margin: 20px auto;
-			padding: 0 20px;
+			margin: 0px auto;
+			margin-top: 50px;
 		}
 
 		/* ★★★ 로딩 스피너 ★★★ */
@@ -311,10 +317,10 @@
 			position: absolute;
 			right: 0px;
 			top: 2px;
-			border: none;
+			border: 1px solid black;
 			background: none;
 			font-size: 15px;
-			color: white;
+			color: #a4a4a4;
 			cursor: pointer;
 		}
 
@@ -392,7 +398,7 @@
 		}
 
 		.edit-modal-content .form-group {
-			margin-bottom: 18px;
+			margin-bottom: 15px;
 		}
 
 		.edit-modal-content .form-label {
@@ -429,7 +435,6 @@
 		}
 
 		.edit-image-item {
-			position: relative;
 			width: 100px;
 			height: 100px;
 		}
@@ -531,7 +536,7 @@
 		/* 개인 추가 */
 
 		#timer {
-			min-width: 40px;
+			min-width: 50px;
 		}
 
 		.estimate-list-btn-div {
@@ -553,7 +558,7 @@
 		}
 
 		.btn-sm {
-			width: 130px;
+			width: 120px;
 		}
 
 		.form-group-parents {
@@ -563,6 +568,86 @@
 
 		.form-child {
 			width: 50%;
+		}
+
+		.agreement-group {
+			display: flex;
+			justify-content: right;
+			padding-top: 5px;
+			align-items: center;
+		}
+
+		.agreement-group a {
+			text-decoration: none;
+			color: #555;
+			font-size: 14px;
+			cursor: pointer;
+			margin-left: 5px;
+		}
+
+		.agreement-group label {
+			color: #555;
+			font-size: 14px;
+			cursor: pointer;
+		}
+
+		.auth-timer-span {
+			margin: 0 10px;
+			font-weight: bold;
+			color: #007bff;
+		}
+
+		.pagination-container {
+			display: flex;
+			justify-content: center;
+			margin-top: 2rem;
+		}
+
+		.pagination {
+			display: flex;
+			padding-left: 0;
+			list-style: none;
+			border-radius: 0.25rem;
+		}
+
+		.page-item .page-link {
+			position: relative;
+			display: block;
+			padding: 0.5rem 0.75rem;
+			margin-left: -1px;
+			line-height: 1.25;
+			color: #20367a;
+			background-color: #fff;
+			border: 1px solid #dee2e6;
+			cursor: pointer;
+			text-decoration: none;
+			margin: 0 2px;
+		}
+
+		.page-item:first-child .page-link {
+			margin-left: 0;
+			border-top-left-radius: 0.25rem;
+			border-bottom-left-radius: 0.25rem;
+		}
+
+		.page-item:last-child .page-link {
+			border-top-right-radius: 0.25rem;
+			border-bottom-right-radius: 0.25rem;
+		}
+
+		.page-item.active .page-link {
+			z-index: 1;
+			color: #fff;
+			background-color: #20367a;
+			border-color: #20367a;
+		}
+
+		.page-item.disabled .page-link {
+			color: #6c757d;
+			pointer-events: none;
+			cursor: auto;
+			background-color: #fff;
+			border-color: #dee2e6;
 		}
 	</style>
 </head>
@@ -612,7 +697,7 @@
 					</div>
 					<div class="form-group">
 						<label for="verifiedValue">신청 시 인증정보</label>
-						<input type="text" id="verifiedValue" name="verifiedValue" placeholder="신청 시 인증한 휴대폰 번호 또는 이메일"
+						<input type="text" id="verifiedValue" name="verifiedValue" placeholder="휴대폰 번호 입력"
 							required>
 					</div>
 					<button type="submit" class="btn btn-primary">조회하기</button>
@@ -630,20 +715,20 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.0.6/compressor.min.js"></script>
 
 	<script th:inline="javascript">
-		const fullEstimateList = /*[[${estimateList}]]*/null;
-	</script>
-	<script th:inline="javascript">
 		/*<![CDATA[*/
-		window.cleaningServices = /*[[${cleaningServices}]]*/null;
+		const pageEstimate = /*[[${pageEstimate}]]*/null;
+		const cleaningServices = /*[[${cleaningServices}]]*/null;
+		const remainingTimeInSeconds = /*[[${remainingTime}]]*/ null;
 		/*]]>*/
 	</script>
 
 	<script th:inline="javascript" type="module">
 		import {validate} from '/js/validate.js';
-		import {initPhoneFormatting, removePhoneFormatting} from '/js/format.js';
+		import {initPhoneFormatting, removePhoneFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {sendEmail, verifyMailCode} from '/js/emailVerification.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
-		import {startCountdown, stopCountdown} from '/js/timer.js';
+		// import {startCountdown, stopCountdown} from '/js/timer.js';
+		import {authTimerManager} from '/js/timer.js';
 		import {initAddressSearch} from '/js/address-api.js';
 		import {createImageHandler} from '/js/imageHandler.js';
 		import {signInAuthPhone, signInAuthEmail, signOutAuth} from '/js/sign.js';
@@ -656,7 +741,7 @@
 			const tabLinks = document.querySelectorAll('.tab-link');
 			const tabContents = document.querySelectorAll('.tab-content');
 
-			// 본인인증 탭
+			// 본인인증 조회 탭
 			const authTypeSelect = document.getElementById('authType');
 			const authValueInput = document.getElementById('authValue');
 			const sendAuthCodeBtn = document.getElementById('sendAuthCodeBtn');
@@ -665,9 +750,14 @@
 			const timerDisplay = document.getElementById('timer');
 			const verifyAuthCodeBtn = document.getElementById('verifyAuthCodeBtn');
 			const authSearchBtn = document.getElementById('authSearchBtn');
+			
+			// 견적서 번호 조회 탭
+			const verifiedMethod = document.getElementById('verifiedMethod');
+			const verifiedValue = document.getElementById('verifiedValue');
 
 			// 검색 결과 탭
-			let cachedEstimates = []; // 조회된 견적 데이터를 저장할 캐시
+			let cachedEstimate = []; // 조회된 견적 데이터를 저장할 캐시
+			let cachedPage = null;
 			const searchContainer = document.querySelector('.search-container');
 			const searchFormWrapper = document.querySelector('.search-form-wrapper');
 			const searchTitle = document.querySelector('.search-title');
@@ -678,6 +768,7 @@
 
 			// --- 2. 상태 관리 변수 ---
 			let isVerified = false;
+			let currentPageNumber = 0;
 			const STATUS_LABEL = {
 				RECEIVE: '접수',
 				IN_PROGRESS: '처리중',
@@ -692,24 +783,34 @@
 				isVerified = false;
 
 				// 타이머 정지
-				stopCountdown(timerDisplay);
+				//stopCountdown(timerDisplay);
+				authTimerManager.stop();
 
 				// 입력 필드 및 버튼 활성화/초기화
 				authValueInput.disabled = false;
 				authValueInput.value = '';
+				verifiedValue.value = '';
 
 				if (authValueInput.placeholder === '휴대폰 번호 입력') {
 					initPhoneFormatting(authValueInput);
 				} else {
 					removePhoneFormatting(authValueInput);
 				}
+				
+				if (verifiedValue.placeholder === '휴대폰 번호 입력') {
+					initPhoneFormatting(verifiedValue);
+				} else {
+					removePhoneFormatting(verifiedValue);
+				}
 
 				sendAuthCodeBtn.disabled = false;
 				sendAuthCodeBtn.textContent = '인증번호 발송';
+				sendAuthCodeBtn.classList = 'btn btn-primary-mini';
 
 				authCodeInput.value = '';
 				authCodeInput.disabled = false;
 				verifyAuthCodeBtn.disabled = false;
+				verifyAuthCodeBtn.classList = 'btn btn-primary-mini';
 
 				// 인증번호 입력칸 숨기기
 				verificationCodeGroup.style.display = 'none';
@@ -744,21 +845,21 @@
 					showLoading(true);
 
 					// 2. 발급받은 토큰으로 견적 데이터를 조회한다.
-					const json = await getAllEstimateByAuth();
-					if (json.code === '2041') {
-						showLoading(false);
+					const json = await getAllEstimateByAuth(0);
+					if (json.code === '2041' || json.data.empty) {
 						resetVerification();
+						toggleSearchContainer(false);
+						resultsContainer.innerHTML = '<p style="text-align:center;">해당 정보에 일치하는 견적서가 없습니다.</p>';
 						alert("해당 정보에 일치하는 견적서가 없습니다.");
 						return;
 					}
-					cachedEstimates = json.data;
-					showLoading(false);
+					const estimatePage = json.data;
+					cachedPage = estimatePage;
 					resetVerification();
-					showEstimateList(cachedEstimates);
+					showEstimateList(estimatePage, true);
 					toggleSearchContainer(false); // 검색창 접기
 
 				} catch (error) {
-					showLoading(false);
 					alert(`조회에 실패했습니다: ${error.message}`);
 				} finally {
 					authSearchBtn.disabled = false;
@@ -775,19 +876,18 @@
 				showLoading(true);
 				try {
 					const json = await getEstimateByGuest(estimateId, value);
-					cachedEstimates = [json.data]; // 단건이지만 배열로 저장
-					showLoading(false);
 					showEstimateDetail(json.data, false); // 바로 상세 보기
 					toggleSearchContainer(false); // 검색창 접기
 				} catch (error) {
-					showLoading(false);
 					alert(error.message);
 				}
 			}
 
 			// 로딩 스피너 표시/숨김
 			function showLoading(isLoading) {
-				resultsContainer.innerHTML = isLoading ? '<div class="loading-spinner"></div>' : '';
+				if (isLoading) {
+					resultsContainer.innerHTML = '<div class="loading-spinner"></div>';
+				}
 			}
 
 			// 검색창 토글
@@ -817,7 +917,7 @@
 			}
 
 			// 견적 리스트 그리기
-			function showEstimateList(estimates) {
+			function showEstimateList(page, isNewSearch = false) {
 				resultsContainer.innerHTML = ''; // 초기화
 				const estimateListRefreshDiv = document.createElement('div');
 				estimateListRefreshDiv.className = "estimate-list-btn-div";
@@ -827,37 +927,49 @@
 				unAuthButton.innerText = `인증 해제`;
 				unAuthButton.addEventListener('click', async (e) => {
 					e.preventDefault();
+					authTimerManager.stop();
 					await signOutAuth();
 					window.location.reload();
 				});
+
+				const authTimer = document.createElement('span');
+				authTimer.id = 'auth-timer';
+				authTimer.className = 'auth-timer-span';
+				authTimerManager.setDisplay(authTimer);
+
+				const onTimerEnd = () => {
+					alert("인증 시간이 만료되었습니다. 다시 인증해주세요.");
+					window.location.reload(); // 페이지 새로고침
+				};
+
+				// 2. 타이머 시작 로직
+				// isNewSearch가 true이면 30분(1800초), 아니면(새로고침이면) 서버가 준 남은 시간으로 설정
+				if (isNewSearch) {
+					authTimerManager.start(1800, onTimerEnd);
+				}
+				// 페이지 새로고침으로 진입했고, 서버에서 남은 시간을 줬을 경우 타이머 시작
+				else if (remainingTimeInSeconds && remainingTimeInSeconds > 0) {
+					authTimerManager.start(remainingTimeInSeconds, onTimerEnd);
+				}
 
 				const refreshButton = document.createElement('button');
 				refreshButton.className = 'estimate-list-refresh-btn btn btn-primary-mini';
 				refreshButton.innerText = `새로고침`;
 				refreshButton.addEventListener('click', async (e) => {
 					e.preventDefault();
-					showLoading(true);
-					const json = await getAllEstimateByAuth();
-					cachedEstimates = json.data;
-
-					showLoading(false);
-					resetVerification();
-
-					if (cachedEstimates.length === 0) {
-						resultsContainer.innerHTML = '<p style="text-align:center;">조회된 견적 내역이 없습니다.</p>';
-					} else {
-						showEstimateList(cachedEstimates);
-					}
+					window.location.reload();
 				});
 				estimateListRefreshDiv.appendChild(unAuthButton);
+				estimateListRefreshDiv.appendChild(authTimer);
 				estimateListRefreshDiv.appendChild(refreshButton);
 				resultsContainer.appendChild(estimateListRefreshDiv);
 
-				estimates.forEach(est => {
-					const item = document.createElement('div');
-					item.className = 'estimate-list-item';
-					item.dataset.id = est.estimateId; // ID 저장
-					item.innerHTML = `
+				if (page.content && page.content.length > 0) {
+					page.content.forEach(est => {
+						const item = document.createElement('div');
+						item.className = 'estimate-list-item';
+						item.dataset.id = est.estimateId; // ID 저장
+						item.innerHTML = `
 									<div class="estimate-summary-info">
 										${createStatusBadge(est.estimateStatus)}
 										<span class="name"><b>${est.name}</b> 님</span>
@@ -865,11 +977,67 @@
 									</div>
 									<div class="estimate-id">#${est.estimateId}</div>
 								`;
-					item.addEventListener('click', () => {
-						const clickedEstimate = cachedEstimates.find(e => e.estimateId == item.dataset.id);
-						showEstimateDetail(clickedEstimate, true); // 본인인증 조회의 경우 true
+						item.addEventListener('click', () => {
+							const clickedEstimate = page.content.find(e => e.estimateId == item.dataset.id);
+							showEstimateDetail(clickedEstimate, true); // 본인인증 조회의 경우 true
+						});
+						resultsContainer.appendChild(item);
 					});
-					resultsContainer.appendChild(item);
+				}
+
+				renderPagination(page);
+			}
+
+			function renderPagination(page) {
+				const paginationContainer = document.createElement('nav');
+				paginationContainer.className = 'pagination-container';
+
+				let paginationHtml = '<ul class="pagination">';
+
+				// '이전' 버튼
+				paginationHtml += `
+			        <li class="page-item ${page.first ? 'disabled' : ''}">
+			            <a class="page-link" href="#" data-page="${page.number - 1}">이전</a>
+			        </li>
+			    `;
+
+				// 페이지 번호 버튼 (최대 5개만 보이도록 간단히 처리)
+				let startPage = Math.max(0, page.number - 2);
+				let endPage = Math.min(page.totalPages - 1, startPage + 4);
+				startPage = Math.max(0, endPage - 4); // endPage가 조정되었을 경우 startPage 재조정
+
+				for (let i = startPage; i <= endPage; i++) {
+					paginationHtml += `
+			            <li class="page-item ${i === page.number ? 'active' : ''}">
+			                <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+			            </li>
+			        `;
+				}
+
+				// '다음' 버튼
+				paginationHtml += `
+			        <li class="page-item ${page.last ? 'disabled' : ''}">
+			            <a class="page-link" href="#" data-page="${page.number + 1}">다음</a>
+			        </li>
+			    `;
+
+				paginationHtml += '</ul>';
+				paginationContainer.innerHTML = paginationHtml;
+				resultsContainer.appendChild(paginationContainer);
+
+				// 페이지 번호 클릭 이벤트 (이벤트 위임 사용)
+				paginationContainer.addEventListener('click', function (e) {
+					e.preventDefault();
+					const target = e.target;
+
+					// a 태그가 아니거나, disabled 상태이면 무시
+					if (target.tagName !== 'A' || target.parentElement.classList.contains('disabled')) {
+						return;
+					}
+
+					const pageNumber = parseInt(target.dataset.page, 10);
+
+					fetchAndDisplayEstimates(pageNumber);
 				});
 			}
 
@@ -878,13 +1046,13 @@
 				resultsContainer.innerHTML = ''; // 초기화
 				const detailView = document.createElement('div');
 				detailView.className = 'estimate-detail-view';
-				
+
 
 				// 이미지 갤러리 HTML 생성
 				const imagesHtml = est.images && est.images.length > 0
 					? est.images.map(src => `<img src="${src}" alt="견적 이미지">`).join('')
 					: '<span>첨부된 이미지가 없습니다.</span>';
-					
+
 				detailView.innerHTML = `
 								<div class="detail-header">
 						            ${createStatusBadge(est.estimateStatus)}
@@ -916,16 +1084,16 @@
 								</div>
 								<div class="detail-actions">
 									<button type="button" class="btn btn-secondary btn-edit" ${!isFromAuthSearch ? 'disabled' : ''}>수정</button>
-									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
+									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 단건 조회시 불가능합니다.</span>' : ''}
 									<button type="button" class="btn btn-secondary btn-delete" ${!isFromAuthSearch ? 'disabled' : ''}>삭제</button>
-									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 본인인증 후 가능합니다.</span>' : ''}
+									${!isFromAuthSearch ? '<span class="tooltip">수정/삭제는 단건 조회시 불가능합니다.</span>' : ''}
 								</div>
 							`;
 
 				const backToListBtn = detailView.querySelector('#back-to-list-btn');
 				if (backToListBtn) {
 					backToListBtn.addEventListener('click', () => {
-						showEstimateList(cachedEstimates);
+						showEstimateList(cachedPage);
 					});
 				}
 
@@ -936,7 +1104,7 @@
 						updateApiFunction: updateEstimateByAuth,
 						onSaveSuccess: (updatedEstimate) => {
 							// 캐시 업데이트 및 리스트 다시 그리기
-							cachedEstimates = cachedEstimates.map(item =>
+							cachedPage.content = cachedPage.content.map(item =>
 								item.estimateId === updatedEstimate.estimateId ? updatedEstimate : item
 							);
 							// 수정 후에는 상세 보기 화면을 다시 그려주는 것이 더 좋은 경험
@@ -948,24 +1116,54 @@
 				});
 				detailView.querySelector('.btn-delete').addEventListener('click', (e) => {
 					e.preventDefault();
-					handleDelete(est.estimateId);
+					handleDelete(est.estimateId, est.version);
 				});
 
 				resultsContainer.appendChild(detailView);
 			}
 
+
+			// 특정 페이지의 데이터를 불러와 다시 그리는 함수
+			async function fetchAndDisplayEstimates(pageNumber) {
+				showLoading(true);
+				try {
+					const json = await getAllEstimateByAuth(pageNumber);
+					if (json.code === '2041' || json.data.empty) {
+						resultsContainer.innerHTML = '<p style="text-align:center;">데이터를 불러오는데 실패했습니다.</p>';
+					} else {
+						const estimatePage = json.data;
+						currentPageNumber = pageNumber;
+						cachedPage = estimatePage;
+						showEstimateList(estimatePage); // 목록과 페이지네이션 다시 그리기
+					}
+				} catch (error) {
+					alert(`페이지를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+				}
+			}
+
 			// 삭제 처리
-			async function handleDelete(estimateId) {
+			async function handleDelete(estimateId, version) {
 				if (confirm('정말로 이 견적서를 삭제하시겠습니까?')) {
 					try {
-						await deleteEstimateByAuth(estimateId);
+						await deleteEstimateByAuth(estimateId, version);
 						alert('삭제되었습니다.');
-						// 리스트 재조회
+						// 삭제 후 재조회 로직 변경!
 						showLoading(true);
-						const json = await getAllEstimateByAuth();
-						cachedEstimates = json.data;
-						showLoading(false);
-						showEstimateList(cachedEstimates);
+
+						// 기억해 둔 currentPageNumber로 현재 페이지를 다시 조회한다.
+						const json = await getAllEstimateByAuth(currentPageNumber);
+						const reloadedPage = json.data;
+
+						// ★★★ 4. (꿀팁) 만약 현재 페이지의 마지막 항목을 삭제해서
+						// 페이지가 비어버렸고, 그 페이지가 첫 페이지가 아니라면,
+						// 자동으로 이전 페이지를 불러와 준다.
+						if (reloadedPage.empty && reloadedPage.number > 0) {
+							const prevPageJson = await getAllEstimateByAuth(reloadedPage.number - 1);
+							showEstimateList(prevPageJson.data);
+						} else {
+							showEstimateList(reloadedPage);
+						}
+
 					} catch (error) {
 						alert(error.message);
 					}
@@ -1016,6 +1214,11 @@
 				authValueInput.placeholder = e.target.value === 'phone' ? '휴대폰 번호 입력' : '이메일 주소 입력';
 				resetVerification();
 			});
+			
+			verifiedMethod.addEventListener('change', (e) => {
+				verifiedValue.placeholder = e.target.value === 'phone' ? '휴대폰 번호 입력' : '이메일 주소 입력';
+				resetVerification();
+			});
 
 			// "인증번호 발송" 버튼 클릭 이벤트
 			sendAuthCodeBtn.addEventListener('click', async () => {
@@ -1038,7 +1241,11 @@
 					sendAuthCodeBtn.textContent = '재전송';
 					sendAuthCodeBtn.classList = 'btn btn-secondary';
 					verificationCodeGroup.style.display = 'flex';
-					startCountdown(180, timerDisplay);
+					//startCountdown(180, timerDisplay);
+					authTimerManager.setDisplay(timerDisplay);
+					authTimerManager.start(180, () => {
+						verifyAuthCodeBtn.disabled = false;
+					});
 
 				} catch (error) {
 					sendAuthCodeBtn.textContent = '인증번호 발송';
@@ -1053,9 +1260,8 @@
 				const authType = authTypeSelect.value;
 				const authValue = authValueInput.value;
 				const authCode = authCodeInput.value;
-
 				verifyAuthCodeBtn.disabled = true;
-				verifyAuthCodeBtn.classList = 'btn btn-secondary';
+
 
 				try {
 					// 3. authType에 따라 import된 함수를 호출하도록 수정
@@ -1067,11 +1273,13 @@
 
 					alert('인증에 성공했습니다.');
 					isVerified = true;
-					stopCountdown(timerDisplay);
+					//stopCountdown(timerDisplay);
+					authTimerManager.stop();
 
 					sendAuthCodeBtn.disabled = true;
 					authCodeInput.disabled = true;
 					verifyAuthCodeBtn.disabled = true;
+					verifyAuthCodeBtn.classList = 'btn btn-secondary';
 					authSearchBtn.disabled = false;
 
 				} catch (error) {
@@ -1087,13 +1295,15 @@
 			resetVerification();
 
 			// auth토큰이 쿠키에 남아있는 경우 페이지 로드
-			if (fullEstimateList) {
-				cachedEstimates = fullEstimateList;
+			if (pageEstimate) {
+				cachedPage = pageEstimate;
 				toggleSearchContainer(false);
-				showEstimateList(fullEstimateList);
+				showEstimateList(pageEstimate);
 			}
 
+			initVerificationCodeFormatting(authCodeInput);
 		});
+
 
 	</script>
 

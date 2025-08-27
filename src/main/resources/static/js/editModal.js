@@ -1,10 +1,11 @@
 // --- 1. 모듈이 사용하는 모든 외부 함수들을 import ---
-import { initAddressSearch } from './address-api.js';
-import { createImageHandler } from './imageHandler.js';
-import { sendEmail, verifyMailCode } from './emailVerification.js';
-import { sendSms, verifySmsCode } from './smsVerification.js';
-import { startCountdown, stopCountdown } from './timer.js';
+import { initAddressSearch } from '/js/address-api.js';
+import { createImageHandler } from '/js/imageHandler.js';
+import { sendEmail, verifyMailCode } from '/js/emailVerification.js';
+import { sendSms, verifySmsCode } from '/js/smsVerification.js';
+import { startCountdown, stopCountdown } from '/js/timer.js';
 import { initPhoneFormatting, initVerificationCodeFormatting } from '/js/format.js';
+import { clearEstimatePhone, updateEstimatePhoneByVerification, clearEstimateEmail, updateEstimateEmailByVerification } from '/js/estimate.js';
 
 /**
  * 범용 견적 수정 모달을 생성하고 엽니다.
@@ -12,14 +13,13 @@ import { initPhoneFormatting, initVerificationCodeFormatting } from '/js/format.
  * @param {object} config - 페이지별 설정을 담은 객체
  * @param {function} config.updateApiFunction - '저장' 시 호출할 API 함수
  * @param {function} config.onSaveSuccess - 저장 성공 후 실행할 콜백 함수
- * @param {function} config.modalOverlayParents - 저장 성공 후 실행할 콜백 함수
+ * @param {function} config.modalOverlayParents
  */
 export function openEditModal(estimateData, config) {
 	// --- 2. 상태 관리 변수 (원본 데이터를 복사해서 사용) ---
 	const editState = JSON.parse(JSON.stringify(estimateData));
-	let isPhoneVerifiedInModal = !!editState.phoneAgree;
-	let isEmailVerifiedInModal = !!editState.emailAgree;
-
+	let isPhoneVerifiedInModal = editState.phone !== "" && editState.phone !== null;
+	let isEmailVerifiedInModal = editState.email !== "" && editState.email !== null;
 	// --- 3. 모달 HTML 동적 생성 ---
 	const modalOverlay = document.createElement('div');
 	modalOverlay.className = 'edit-modal-overlay';
@@ -84,10 +84,10 @@ export function openEditModal(estimateData, config) {
 	config.modalOverlayParents.appendChild(modalOverlay);
 
 	// --- 4. 모달 내부 로직  ---
-	
+
 	// 서비스 select 채우기
 	const serviceSelect = modalOverlay.querySelector('#edit-cleaningService');
-	window.cleaningServices.forEach(service => {
+	cleaningServices.forEach(service => {
 		const option = document.createElement('option');
 		option.value = service.name; // NEW_BUILDING 같은 enum name
 		option.textContent = service.label; // 신축 청소 등 한글 레이블
@@ -96,7 +96,7 @@ export function openEditModal(estimateData, config) {
 		}
 		serviceSelect.appendChild(option);
 	});
-	
+
 	// 주소 채우기 
 	const editPostcode = modalOverlay.querySelector('#edit-postcode');
 	const editMainAddress = modalOverlay.querySelector('#edit-mainAddress');
@@ -130,15 +130,25 @@ export function openEditModal(estimateData, config) {
 			            </div>
 			        `;
 			// '인증 해제' 버튼에 이벤트 리스너 추가
-			section.querySelector(`#unverify-${type}-btn`).addEventListener('click', () => {
-				if (type === 'phone') {
-					isPhoneVerifiedInModal = false;
-					editState.phone = ''; // 데이터도 비워주면 좋음
-				} else {
-					isEmailVerifiedInModal = false;
-					editState.email = '';
+			section.querySelector(`#unverify-${type}-btn`).addEventListener('click', async () => {
+				try {
+					if (type === 'phone') {
+						const json = await clearEstimatePhone(editState.estimateId, editState.version);
+						isPhoneVerifiedInModal = false;
+						editState.phone = ''; // 데이터도 비워주면 좋음
+						config.onSaveSuccess(json.data);
+						editState.version = json.data.version;
+					} else {
+						const json = await clearEstimateEmail(editState.estimateId, editState.version);
+						isEmailVerifiedInModal = false;
+						editState.email = '';
+						config.onSaveSuccess(json.data);
+						editState.version = json.data.version;
+					}
+					renderAuthSection(type); // UI 다시 그리기
+				} catch (error) {
+					alert(error.message);
 				}
-				renderAuthSection(type); // UI 다시 그리기
 			});
 			return;
 		}
@@ -149,19 +159,30 @@ export function openEditModal(estimateData, config) {
 			            <input type="text" class="form-input" id="edit-${type}" placeholder="${type === 'phone' ? '휴대폰 번호' : '이메일 주소'}">
 			            <button type="button" class="btn btn-primary-mini btn-sm" id="send-code-${type}-btn">인증번호 발송</button>
 			        </div>
-			        <div class="unverified-state input-with-button" id="verify-section-${type}" style="display: none; margin-top: 10px;">
+			        <div class="unverified-state input-with-button" id="verify-section-${type}" style="display: none;">
 			            <input type="text" class="form-input" id="verify-code-${type}" placeholder="인증번호 6자리">
 			            <span class="timer" id="timer-${type}">03:00</span>
 			            <button type="button" class="btn btn-primary-mini btn-sm" id="verify-code-${type}-btn">확인</button>
 			        </div>
+					<div class="agreement-group">
+						<input type="checkbox" id="${type}-agreement" name="agreement">
+						<label for="${type}-agreement">개인정보 수집 및 이용 동의</label>
+						<a href="javascript:;"
+							onclick="javascript:footerlayerLoad('/static/infoAgreement.html'); return false;">[보기]</a>
+					</div>
 			    `;
 		// 3. '인증번호 발송' 버튼에 이벤트 리스너 추가
 		const sendBtn = section.querySelector(`#send-code-${type}-btn`);
 		const valueInput = section.querySelector(`#edit-${type}`);
+		const agreement = section.querySelector(`#${type}-agreement`);
 		if (type === 'phone') {
 			initPhoneFormatting(valueInput);
 		}
 		sendBtn.addEventListener('click', async () => {
+			if (!agreement.checked) {
+				alert("개인정보 수집 및 이용 동의를 체크해 주세요.");
+				return;
+			}
 			const value = valueInput.value;
 			sendBtn.disabled = true;
 			sendBtn.textContent = '전송 중...';
@@ -177,6 +198,7 @@ export function openEditModal(estimateData, config) {
 				// UI 변경: 인증번호 입력 칸 보여주기
 				section.querySelector(`#send-section-${type}`).style.display = 'none';
 				section.querySelector(`#verify-section-${type}`).style.display = 'flex';
+				section.querySelector(`.agreement-group`).style.display = 'none';
 				const timerEl = section.querySelector(`#timer-${type}`);
 				startCountdown(180, timerEl, () => {
 					section.querySelector(`#verify-code-${type}-btn`).disabled = true;
@@ -202,8 +224,14 @@ export function openEditModal(estimateData, config) {
 			try {
 				if (type === 'phone') {
 					await verifySmsCode(value, code);
+					const json = await updateEstimatePhoneByVerification(editState.estimateId, editState.version);
+					config.onSaveSuccess(json.data);
+					editState.version = json.data.version;
 				} else {
 					await verifyMailCode(value, code);
+					const json = await updateEstimateEmailByVerification(editState.estimateId, editState.version);
+					config.onSaveSuccess(json.data);
+					editState.version = json.data.version;
 				}
 				alert('인증에 성공했습니다.');
 				stopCountdown(section.querySelector(`#timer-${type}`));
@@ -240,15 +268,12 @@ export function openEditModal(estimateData, config) {
 
 		const updatedDto = {
 			name: modalOverlay.querySelector('#edit-name').value,
-			phone: isPhoneVerifiedInModal ? modalOverlay.querySelector('#edit-phone').value : null,
-			email: isEmailVerifiedInModal ? modalOverlay.querySelector('#edit-email').value : null,
-			phoneAgree: isPhoneVerifiedInModal,
-			emailAgree: isEmailVerifiedInModal,
 			postcode: editPostcode.value,
 			mainAddress: editMainAddress.value,
 			detailAddress: editDetailAddress.value,
 			cleaningService: serviceSelect.value,
 			content: modalOverlay.querySelector('#edit-content').value,
+			version: editState.version
 		};
 		const formData = imageHandler.buildFormData(updatedDto);
 
@@ -259,7 +284,7 @@ export function openEditModal(estimateData, config) {
 		try {
 			// 설정으로 넘겨받은 API 함수를 호출!
 			const json = await config.updateApiFunction(editState.estimateId, formData);
-
+			console.log(json);
 			config.modalOverlayParents.removeChild(modalOverlay);
 
 			// 설정으로 넘겨받은 콜백 함수를 실행!

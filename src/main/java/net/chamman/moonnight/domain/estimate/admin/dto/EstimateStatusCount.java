@@ -1,4 +1,4 @@
-package net.chamman.moonnight.domain.estimate.dto;
+package net.chamman.moonnight.domain.estimate.admin.dto;
 
 public record EstimateStatusCount(
 		long all,

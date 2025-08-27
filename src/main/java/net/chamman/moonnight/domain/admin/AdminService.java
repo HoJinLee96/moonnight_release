@@ -1,13 +1,9 @@
 package net.chamman.moonnight.domain.admin;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_ALREADY_EXISTS;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.PHONE_ALREADY_EXISTS;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.SIGNIN_FAILED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_NOT_FOUND;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_DELETE;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_STAY;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.USER_STATUS_STOP;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,25 +12,21 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.chamman.moonnight.auth.adminSign.AdminSignService;
-import net.chamman.moonnight.auth.adminSign.log.AdminSignLog.SignResult;
-import net.chamman.moonnight.auth.adminSign.log.AdminSignLogService;
 import net.chamman.moonnight.auth.token.TokenProvider;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
-import net.chamman.moonnight.auth.token.dto.FindAdminPwTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationEmailTokenDto;
 import net.chamman.moonnight.auth.token.dto.VerificationPhoneTokenDto;
 import net.chamman.moonnight.auth.verification.VerificationService;
 import net.chamman.moonnight.domain.admin.Admin.AdminStatus;
-import net.chamman.moonnight.domain.admin.dto.AdminResponseDto;
-import net.chamman.moonnight.global.exception.MismatchPasswordException;
+import net.chamman.moonnight.domain.admin.dto.AdminNameRequestDto;
+import net.chamman.moonnight.domain.admin.dto.AdminPasswordUpdateRequestDto;
+import net.chamman.moonnight.domain.admin.dto.AdminPhoneRequestDto;
+import net.chamman.moonnight.global.exception.HttpStatusCode;
+import net.chamman.moonnight.global.exception.IllegalRequestException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
+import net.chamman.moonnight.global.exception.VersionMismatchException;
 import net.chamman.moonnight.global.exception.admin.DuplicationException;
-import net.chamman.moonnight.global.exception.crypto.DecryptException;
-import net.chamman.moonnight.global.exception.crypto.EncryptException;
 import net.chamman.moonnight.global.exception.redis.RedisGetException;
-import net.chamman.moonnight.global.exception.redis.RedisSetException;
-import net.chamman.moonnight.global.exception.sign.TooManySignFailException;
 import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 import net.chamman.moonnight.global.exception.status.StatusStayException;
 import net.chamman.moonnight.global.exception.status.StatusStopException;
@@ -42,8 +34,6 @@ import net.chamman.moonnight.global.exception.token.IllegalTokenException;
 import net.chamman.moonnight.global.exception.token.NoSuchTokenException;
 import net.chamman.moonnight.global.exception.verification.NotVerifyException;
 import net.chamman.moonnight.global.exception.verification.VerificationExpiredException;
-import net.chamman.moonnight.global.util.LogMaskingUtil;
-import net.chamman.moonnight.global.util.LogMaskingUtil.MaskLevel;
 
 @Service
 @Slf4j
@@ -52,474 +42,214 @@ public class AdminService {
 
 	private final AdminRepository adminRepository;
 	private final VerificationService verificationService;
-	private final AdminSignLogService signLogService;
 	private final TokenProvider tokenProvider;
 	private final PasswordEncoder passwordEncoder;
 
-
 	/**
-	 * 유저 엔티티 조회
+	 * 지정된 ID를 가진 활성 상태의 관리자 정보를 조회합니다.
 	 * 
-	 * @param adminId
-	 * @throws NoSuchDataException   {@link #getAdminByAdminId} 찾을 수 없는 유저
-	 * @throws StatusStayException   {@link #validateStatus} 일시정지 유저
-	 * @throws StatusStopException   {@link #validateStatus} 중지 유저
-	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
-	 * @return
+	 * 내부적으로 관리자를 조회한 후, 해당 관리자의 상태가 정상(ACTIVE)인지 검증합니다. 계정이 일시 정지, 정지, 탈퇴 등 비활성 상태일 경우 각각에 맞는 예외를 발생시킵니다.
+	 *
+	 * @param adminId 조회할 관리자의 고유 ID
+	 * 
+	 * @return 조회된 활성 상태의 Admin 객체
+	 * 
+	 * @throws NoSuchDataException   해당 ID의 관리자가 존재하지 않을 경우.
+	 * @throws StatusStayException   계정이 '일시 정지' 상태일 경우.
+	 * @throws StatusStopException   계정이 '정지' 상태일 경우.
+	 * @throws StatusDeleteException 계정이 '탈퇴' 상태일 경우.
+	 * 
+	 * @apiNote 이 메서드 호출 시 발생할 수 있는 예외와 그에 따른 HTTP 응답 코드입니다.
+	 *          <ul>
+	 *          <li>Admin Account Errors</li>
+	 *          <li>{@code NoSuchDataException} (관리자 없음): 404 Not Found (Code: 4530)</li>
+	 *          <li>{@code StatusStayException}: 403 Forbidden (Code: 4533)</li>
+	 *          <li>{@code StatusStopException}: 401 Unauthorized (Code: 4534)</li>
+	 *          <li>{@code StatusDeleteException}: 410 Gone (Code: 4535)</li>
+	 *          <li>{@code VersionMismatchException}: 409 Conflict (Code: 4540)</li>
+	 *          </ul>
 	 */
-	public Admin getActiveAdminByAdminId(int adminId) {
-
-		Admin admin = adminRepository.findById(adminId)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-		validateStatus(admin);
-
-		return admin;
+	public Admin getActiveAdminById(int adminId) {
+		return findAdminWithValidateStatusByAdminId(adminId);
 	}
 
 	/**
-	 * 유저 엔티티 조회
+	 * 이메일 문자열과 일치하는 활성 상태의 관리자 정보를 조회합니다.
 	 * 
-	 * @param email
-	 * @throws NoSuchDataException {@link #getAdminByEmailAndValidate} 찾을 수 없는 유저
-	 * @return
-	 */
-	public Admin getAdminByEmail(String email) {
-		return adminRepository.findByEmail(email)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-	}
-
-	/**
-	 * 유저 엔티티 조회
+	 * 내부적으로 관리자를 조회한 후, 해당 관리자의 상태가 정상(ACTIVE)인지 검증합니다. 계정이 일시 정지, 정지, 탈퇴 등 비활성 상태일 경우 각각에 맞는 예외를 발생시킵니다.
+	 *
+	 * @param email 조회할 관리자의 email
 	 * 
-	 * @param email
-	 * @throws NoSuchDataException   {@link #getAdminByEmailAndValidate} 찾을 수 없는 유저
-	 * @throws StatusStayException   {@link #validateStatus} 일시정지 유저
-	 * @throws StatusStopException   {@link #validateStatus} 중지 유저
-	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
-	 * @return
+	 * @return 조회된 활성 상태의 Admin 객체
+	 * 
+	 * @throws NoSuchDataException   해당 ID의 관리자가 존재하지 않을 경우.
+	 * @throws StatusStayException   계정이 '일시 정지' 상태일 경우.
+	 * @throws StatusStopException   계정이 '정지' 상태일 경우.
+	 * @throws StatusDeleteException 계정이 '탈퇴' 상태일 경우.
+	 * 
+	 * @apiNote 이 메서드 호출 시 발생할 수 있는 예외와 그에 따른 HTTP 응답 코드입니다.
+	 *          <ul>
+	 *          <li>Admin Account Errors</li>
+	 *          <li>{@code NoSuchDataException} (관리자 없음): 404 Not Found (Code: 4530)</li>
+	 *          <li>{@code StatusStayException}: 403 Forbidden (Code: 4533)</li>
+	 *          <li>{@code StatusStopException}: 401 Unauthorized (Code: 4534)</li>
+	 *          <li>{@code StatusDeleteException}: 410 Gone (Code: 4535)</li>
+	 *          <li>{@code VersionMismatchException}: 409 Conflict (Code: 4540)</li>
+	 *          </ul>
 	 */
 	public Admin getActiveAdminByEmail(String email) {
-
-		Admin admin = adminRepository.findByEmail(email)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-		validateStatus(admin);
-
-		return admin;
-	}
-
-	/**
-	 * 유저 엔티티 조회
-	 * 
-	 * @param adminProvider
-	 * @param email
-	 * @param phone
-	 * @throws NoSuchDataException   {@link #getAdminByAdminProviderAndEmailAndPhone}
-	 *                               찾을 수 없는 유저
-	 * @throws StatusStayException   {@link #validateStatus} 일시정지 유저
-	 * @throws StatusStopException   {@link #validateStatus} 중지 유저
-	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
-	 * @return adminProvider, email, phone 일치하는 Admin 조회 및 status 검사
-	 */
-	public Admin getAdminByEmailAndPhone(String email, String phone) {
-
-		Admin admin = adminRepository.findByEmailAndPhone(email, phone)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-
-		return admin;
-	}
-
-	/**
-	 * 유저 엔티티 조회
-	 * 
-	 * @param adminProvider
-	 * @param phone
-	 * @param verificationPhoneToken
-	 * 
-	 * @throws IllegalTokenException        {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      토큰 문자열 null 또는 비어있음
-	 * @throws NoSuchTokenException         {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 일치하는 토큰 없음
-	 * @throws DecryptException             {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      복호화 실패
-	 * @throws RedisGetException            {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 조회 실패
-	 * 
-	 * @throws NoSuchDataException          {@link VerificationService#isVerify} DB
-	 *                                      verificationId 일치하는 인증 요청 없음
-	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청(시관 초과된 인증)
-	 * @throws NotVerifyException           {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청
-	 * 
-	 * @throws NoSuchDataException          {@link #getAdminByAdminProviderAndPhone}
-	 *                                      찾을 수 없는 유저
-	 * @throws StatusStayException          {@link #getAdminByAdminProviderAndPhone}
-	 *                                      일시정지 유저
-	 * @throws StatusStopException          {@link #getAdminByAdminProviderAndPhone}
-	 *                                      중지 유저
-	 * @throws StatusDeleteException        {@link #getAdminByAdminProviderAndPhone}
-	 *                                      탈퇴 유저
-	 * 
-	 * @return 휴대폰 번호와 일치하는 Admin 엔티티
-	 */
-	public AdminResponseDto getAdminByVerifiedPhone(String phone, String verificationPhoneToken) {
-
-		// 휴대폰 인증 검증
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider
-				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
-		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
-		verificationPhoneTokenDto.comparePhone(phone);
-
-		Admin admin = adminRepository.findByPhoneAndAdminStatusNot(phone, AdminStatus.DELETE).orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
-		return AdminResponseDto.fromEntity(admin);
-	}
-
-	/**
-	 * 비밀번호 찾기 자격 검증
-	 * 
-	 * @param adminProvider
-	 * @param email
-	 * @param phone
-	 * @param verificationPhoneToken
-	 * 
-	 * @throws IllegalTokenException        {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      토큰 문자열 null 또는 비어있음
-	 * @throws NoSuchTokenException         {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 일치하는 토큰 없음
-	 * @throws DecryptException             {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      복호화 실패
-	 * @throws RedisGetException            {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 조회 실패
-	 * 
-	 * @throws NoSuchDataException          {@link VerificationService#isVerify} DB
-	 *                                      verificationId 일치하는 인증 요청 없음.
-	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청(시관 초과된 인증).
-	 * @throws NotVerifyException           {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청.
-	 * 
-	 * @throws NoSuchDataException          {@link #getAdminByAdminProviderAndEmailAndPhone}
-	 *                                      찾을 수 없는 유저
-	 * @throws StatusStayException          {@link #getAdminByAdminProviderAndEmailAndPhone}
-	 *                                      일시정지 유저
-	 * @throws StatusStopException          {@link #getAdminByAdminProviderAndEmailAndPhone}
-	 *                                      중지 유저
-	 * @throws StatusDeleteException        {@link #getAdminByAdminProviderAndEmailAndPhone}
-	 *                                      탈퇴 유저
-	 * 
-	 * @throws EncryptException             {@link TokenProvider#createToken} 암호화 실패
-	 * @throws RedisSetException            {@link TokenProvider#createToken} Redis
-	 *                                      저장 실패
-	 * 
-	 * @return 비밀번호 변경 자격 토큰
-	 */
-	@SuppressWarnings("incomplete-switch")
-	public String createFindPwTokenByVerifyPhone(String email, String phone,
-			String verificationPhoneToken) {
-
-		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider
-				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
-		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
-
-		Admin admin = getAdminByEmailAndPhone(email, phone);
-		switch (admin.getAdminStatus()) {
-		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. admin.id: " + admin.getAdminId());
-		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. admin.id: " + admin.getAdminId());
-		}
-		
-		String findPwToken = tokenProvider.createToken(new FindAdminPwTokenDto(admin.getAdminId() + "", email),
-				FindAdminPwTokenDto.TOKENTYPE);
-
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
-
-		return findPwToken;
-	}
-
-	/**
-	 * 비밀번호 찾기 자격 검증
-	 * 
-	 * @param adminProvider
-	 * @param email
-	 * @param verificationEmailToken
-	 * 
-	 * @throws IllegalTokenException        {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      토큰 문자열 null 또는 비어있음
-	 * @throws NoSuchTokenException         {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 일치하는 토큰 없음
-	 * @throws DecryptException             {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      복호화 실패
-	 * @throws RedisGetException            {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 조회 실패
-	 * 
-	 * @throws NoSuchDataException          {@link VerificationService#isVerify} DB
-	 *                                      verificationId 일치하는 인증 요청 없음.
-	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청(시관 초과된 인증).
-	 * @throws NotVerifyException           {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청.
-	 * 
-	 * @throws NoSuchDataException          {@link #getAdminByAdminProviderAndEmail}
-	 *                                      찾을 수 없는 유저
-	 * @throws StatusStayException          {@link #getAdminByAdminProviderAndEmail}
-	 *                                      일시정지 유저
-	 * @throws StatusStopException          {@link #getAdminByAdminProviderAndEmail}
-	 *                                      중지 유저
-	 * @throws StatusDeleteException        {@link #getAdminByAdminProviderAndEmail}
-	 *                                      탈퇴 유저
-	 * 
-	 * @throws EncryptException             {@link TokenProvider#createToken} 암호화 실패
-	 * @throws RedisSetException            {@link TokenProvider#createToken} Redis
-	 *                                      저장 실패
-	 * 
-	 * @return 비밀번호 변경 자격 토큰
-	 */
-	@SuppressWarnings("incomplete-switch")
-	public String createFindPwTokenByVerifyEmail(String email, String verificationEmailToken) {
-
-		VerificationEmailTokenDto verificationEmailTokenDto = tokenProvider
-				.getDecryptedTokenDto(VerificationEmailTokenDto.TOKENTYPE, verificationEmailToken);
-		verificationService.isVerify(verificationEmailTokenDto.getIntVerificationId());
-
-		Admin admin = getAdminByEmail(email);
-		switch (admin.getAdminStatus()) {
-		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. admin.id: " + admin.getAdminId());
-		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. admin.id: " + admin.getAdminId());
-		}
-
-		String findPwToken = tokenProvider.createToken(new FindAdminPwTokenDto(admin.getAdminId() + "", email),
-				FindAdminPwTokenDto.TOKENTYPE);
-
-		tokenProvider.removeToken(TokenType.VERIFICATION_EMAIL, verificationEmailToken);
-
-		return findPwToken;
+		return findAdminWithValidateStatusByEmail(email);
 	}
 
 	/**
 	 * 비밀번호 변경
 	 * 
-	 * @param token        FindPwToken
-	 * @param adminProvider
+	 * @param token
 	 * @param newPassword
-	 * @param ip
-	 * @throws IllegalTokenException {@link TokenProvider#getDecryptedTokenDto} 토큰
-	 *                               문자열 null 또는 비어있음
-	 * @throws NoSuchTokenException  {@link TokenProvider#getDecryptedTokenDto}
-	 *                               Redis 일치하는 토큰 없음
-	 * @throws DecryptException      {@link TokenProvider#getDecryptedTokenDto} 복호화
-	 *                               실패
-	 * @throws RedisGetException     {@link TokenProvider#getDecryptedTokenDto}
-	 *                               Redis 조회 실패
-	 * 
-	 * @throws NoSuchDataException   {@link #getAdminByAdminId} 찾을 수 없는 유저
-	 * @throws StatusStayException   {@link #validateStatus} 일시정지 유저
-	 * @throws StatusStopException   {@link #validateStatus} 중지 유저
-	 * @throws StatusDeleteException {@link #validateStatus} 탈퇴 유저
+	 * @param clientIp
 	 */
-	@SuppressWarnings("incomplete-switch")
 	@Transactional
-	public void updatePasswordByFindPwToken(String token, String newPassword, String clientIp) {
-
-		FindAdminPwTokenDto findPwTokenDto = tokenProvider.getDecryptedTokenDto(FindAdminPwTokenDto.TOKENTYPE, token);
-
-		Admin admin = adminRepository.findById(findPwTokenDto.getIntAdminId())
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
-
-		switch (admin.getAdminStatus()) {
-		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. admin.id: " + admin.getAdminId());
-		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. admin.id: " + admin.getAdminId());
+	public void updatePasswordByEmail(int adminId, AdminPasswordUpdateRequestDto dto, String token) {
+	
+		VerificationEmailTokenDto tokenDto = tokenProvider.getDecryptedTokenDto(TokenType.VERIFICATION_EMAIL, token);
+		verificationService.isVerify(tokenDto.getIntVerificationId());
+		
+		if (!Objects.equals(dto.newPassword(), dto.confirmNewPassword())) {
+			throw new IllegalRequestException(HttpStatusCode.REQUEST_BODY_NOT_VALID);
+		}
+	
+		Admin admin = findAdminWithValidateStatusByAdminId(adminId);
+		admin.verifyVersion(dto.version());
+	
+		admin.setPassword(passwordEncoder.encode(dto.newPassword()));
+	}
+	
+	/**
+	 * 비밀번호 변경
+	 * 
+	 * @param token
+	 * @param newPassword
+	 * @param clientIp
+	 */
+	@Transactional
+	public void updatePasswordByPhone(int adminId, AdminPasswordUpdateRequestDto dto, String token) {
+		
+		VerificationPhoneTokenDto tokenDto = tokenProvider.getDecryptedTokenDto(TokenType.VERIFICATION_PHONE, token);
+		verificationService.isVerify(tokenDto.getIntVerificationId());
+		
+		if (!Objects.equals(dto.newPassword(), dto.confirmNewPassword())) {
+			throw new IllegalRequestException(HttpStatusCode.REQUEST_BODY_NOT_VALID);
 		}
 		
-		admin.setPassword(passwordEncoder.encode(newPassword));
-		admin.setAdminStatus(AdminStatus.ACTIVE);
-		adminRepository.save(admin);
-
-		// 로그인 실패기록에 비밀번호 변경으로 초기화 진행
-		signLogService.signAdminAndFailLogResolve(admin, SignResult.UPDATE_PASSWORD, clientIp);
-
-		tokenProvider.removeToken(TokenType.ACCESS_FINDPW, token);
+		Admin admin = findAdminWithValidateStatusByAdminId(adminId);
+		admin.verifyVersion(dto.version());
+		
+		admin.setPassword(passwordEncoder.encode(dto.newPassword()));
 	}
 
 	/**
-	 * 비밀번호 검증
+	 * 휴대폰 인증 완료 후, 관리자의 휴대폰 번호를 변경합니다.
 	 * 
-	 * @param adminId
-	 * @param password
+	 * 제출된 인증 토큰을 복호화하고 유효성을 검증합니다. DB에서 인증 요청 기록을 찾아 정상 처리되었는지 재차 확인합니다. 관리자 계정이 활성 상태인지 확인합니다. 데이터 정합성을 위해 엔티티 버전을 검증합니다. 모든 검증이 통과되면 휴대폰 번호를 변경하고, 사용된 인증 토큰을 삭제합니다.
+	 *
+	 * @param adminId                휴대폰 번호를 변경할 관리자의 고유 ID
+	 * @param dto                    AdminPhoneRequestDto 새로 변경할 휴대폰 번호와 데이터 정합성 검증을 위한 엔티티 버전 번호
+	 * @param verificationPhoneToken 휴대폰 인증 성공 후 발급된 일회성 토큰
 	 * 
-	 * @throws TooManySignFailException  {@link AdminSignService#validatePassword} 비밀번호
-	 *                                   실패 횟수 초과
-	 * @throws MismatchPasswordException {@link AdminSignService#validatePassword} 비밀번호
-	 *                                   불일치
+	 * @throws IllegalTokenException        토큰이 null이거나 비어있는 경우. ({@link TokenProvider#getDecryptedTokenDto})
+	 * @throws NoSuchTokenException         Redis에 일치하는 토큰이 없는 경우. ({@link TokenProvider#getDecryptedTokenDto})
+	 * @throws RedisGetException            Redis 데이터를 DTO로 변환 또는 복호화하는 데 실패한 경우. ({@link TokenProvider#getDecryptedTokenDto})
+	 * @throws NoSuchDataException          DB에 해당 인증 요청 또는 관리자 정보가 없는 경우. ({@link VerificationService#isVerify}, {@link #findAdminWithValidateStatusByAdminId})
+	 * @throws VerificationExpiredException 인증 유효 시간이 만료된 경우. ({@link VerificationService#isVerify})
+	 * @throws NotVerifyException           아직 인증이 완료되지 않은 요청인 경우. ({@link VerificationService#isVerify})
+	 * @throws StatusStayException          계정이 '일시 정지' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws StatusStopException          계정이 '정지' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws StatusDeleteException        계정이 '탈퇴' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws VersionMismatchException     데이터가 다른 곳에서 먼저 수정되어 버전이 일치하지 않는 경우. ({@link Admin#verifyVersion})
 	 * 
-	 * @throws EncryptException          {@link TokenProvider#createToken} 암호화 실패
-	 * @throws RedisSetException         {@link TokenProvider#createToken} Redis 저장
-	 *                                   실패
-	 */
-	public void confirmPassword(int adminId, String password, String clientIp) {
-		Admin admin = getActiveAdminByAdminId(adminId);
-		validatePassword(admin, password, clientIp);
-	}
-
-	/**
-	 * 휴대폰 번호 변경
-	 * 
-	 * @param adminProvider
-	 * @param email
-	 * @param phone
-	 * @param token
-	 * @throws IllegalTokenException        {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      토큰 문자열 null 또는 비어있음
-	 * @throws NoSuchTokenException         {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 일치하는 토큰 없음
-	 * @throws DecryptException             {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      복호화 실패
-	 * @throws RedisGetException            {@link TokenProvider#getDecryptedTokenDto}
-	 *                                      Redis 조회 실패
-	 * 
-	 * @throws NoSuchDataException          {@link VerificationService#isVerify} DB
-	 *                                      verificationId 일치하는 인증 요청 없음
-	 * @throws VerificationExpiredException {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청(시관 초과된 인증)
-	 * @throws NotVerifyException           {@link VerificationService#isVerify} DB
-	 *                                      미인증된 인증 요청
-	 * 
-	 * @throws NoSuchDataException          {@link #getAdminByAdminId} 찾을 수 없는 유저
-	 * @throws StatusStayException          {@link #getAdminByAdminId} 일시정지 유저
-	 * @throws StatusStopException          {@link #getAdminByAdminId} 중지 유저
-	 * @throws StatusDeleteException        {@link #getAdminByAdminId} 탈퇴 유저
-	 * @return 유저
+	 * @apiNote 이 메서드 호출 시 발생할 수 있는 예외와 그에 따른 HTTP 응답 코드입니다.
+	 *          <ul>
+	 *          <li>Token Errors</li>
+	 *          <li>{@code IllegalTokenException}: 400 Bad Request (Code: 4580)</li>
+	 *          <li>{@code NoSuchTokenException}: 404 Not Found (Code: 4581)</li>
+	 *          <li>{@code RedisGetException}: 500 Internal Server Error (Code: 5002)</li>
+	 *          </ul>
+	 *          <ul>
+	 *          <li>Verification Errors</li>
+	 *          <li>{@code NoSuchDataException} (인증 요청 없음): 404 Not Found (Code: 4590)</li>
+	 *          <li>{@code VerificationExpiredException}: 403 Forbidden (Code: 4593)</li>
+	 *          <li>{@code NotVerifyException}: 403 Forbidden (Code: 4594)</li>
+	 *          </ul>
+	 *          <ul>
+	 *          <li>Admin Account Errors</li>
+	 *          <li>{@code NoSuchDataException} (관리자 없음): 404 Not Found (Code: 4530)</li>
+	 *          <li>{@code StatusStayException}: 403 Forbidden (Code: 4533)</li>
+	 *          <li>{@code StatusStopException}: 401 Unauthorized (Code: 4534)</li>
+	 *          <li>{@code StatusDeleteException}: 410 Gone (Code: 4535)</li>
+	 *          <li>{@code VersionMismatchException}: 409 Conflict (Code: 4540)</li>
+	 *          </ul>
 	 */
 	@Transactional
-	public void updatePhoneByVerification(int adminId, String phone, String token, String clientIp) {
+	public void updatePhoneByVerifiedPhone(int adminId, AdminPhoneRequestDto dto, String verificationPhoneToken) {
 
 		VerificationPhoneTokenDto verificationPhoneTokenDto = tokenProvider
-				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, token);
+				.getDecryptedTokenDto(VerificationPhoneTokenDto.TOKENTYPE, verificationPhoneToken);
 		verificationService.isVerify(verificationPhoneTokenDto.getIntVerificationId());
 
-		Admin admin = getActiveAdminByAdminId(adminId);
-		admin.setPhone(phone);
-		adminRepository.save(admin);
-		
-		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, token);
-	}
-	
-	/**
-	 * [회원가입용] 이메일 중복 및 사용 가능 여부 검증
-	 * 
-	 * @param email 검증할 이메일
-	 * @throws DuplicationException 이미 사용 중인 이메일일 경우 발생
-	 */
-	public void isEmailExistsForRegistration(String email) {
-		log.debug("* 이메일 중복 검사. email: {}", LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM));
-
-		Optional<Admin> existAdmin = adminRepository.findByEmailAndAdminStatusNot(email,AdminStatus.DELETE);
+		Optional<Admin> existAdmin = adminRepository.findByPhoneAndAdminStatusNot(dto.phone(), AdminStatus.DELETE);
 		if (existAdmin.isPresent()) {
-			throw new DuplicationException(EMAIL_ALREADY_EXISTS);
-		}
-	}
-	
-	/**
-	 * [비밀번호 찾기용] 이메일 존재 및 LOCAL 계정 여부 확인
-	 * 
-	 * @param email 확인할 이메일
-	 * @throws AdminNotFoundException 해당 이메일의 유저가 존재하지 않을 경우
-	 * @throws OAuthAccountException 해당 이메일이 소셜 계정일 경우
-	 */
-	public String isEmailExistsForFindPassword(String email) {
-		log.debug("* 비밀번호 찾기 이메일 검증. email: {}", LogMaskingUtil.maskEmail(email, MaskLevel.MEDIUM));
-
-		Admin admin = adminRepository.findByEmailAndAdminStatusNot(email, AdminStatus.DELETE)
-				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND,"가입되지 않은 이메일.")); 
-
-		return admin.getPhone();
-	}
-
-	/**
-	 * 유저 휴대폰 번호 중복 검사
-	 * 
-	 * @param phone
-	 */
-	public void isPhoneExists(String phone) {
-		log.debug("* 휴대폰 중복 검사. phone: {}", LogMaskingUtil.maskPhone(phone, MaskLevel.MEDIUM));
-
-		Optional<Admin> existAdminProvider = adminRepository.findByPhoneAndAdminStatusNot(phone,
-				AdminStatus.DELETE);
-		if (existAdminProvider.isPresent()) {
 			throw new DuplicationException(PHONE_ALREADY_EXISTS);
 		}
+		
+		Admin admin = findAdminWithValidateStatusByAdminId(adminId);
+		admin.verifyVersion(dto.version());
+		admin.modify(null, dto.phone());
+
+		tokenProvider.removeToken(TokenType.VERIFICATION_PHONE, verificationPhoneToken);
 	}
 
 	/**
-	 * 비밀번호 검증 및 결과 `LoginLog` 기록
+	 * 관리자의 이름을 변경합니다.
 	 * 
-	 * @param admin
-	 * @param reqPassword
-	 * @param ip
-	 * @throws TooManySignFailException  {@link AdminSignLogService#validSignFailCount}
-	 *                                   비밀번호 실패 횟수 초과
-	 * @throws MismatchPasswordException {@link #validatePassword} 비밀번호 불일치
+	 * @param adminId 이름을 변경할 관리자의 고유 ID
+	 * @param name    새로 변경할 이름
+	 * @param version 데이터 정합성 검증을 위한 엔티티 버전 번호
+	 * 
+	 * @throws NoSuchDataException      해당 ID의 관리자가 존재하지 않을 경우. {@link #findAdminWithValidateStatusByAdminId})
+	 * @throws StatusStayException      계정이 '일시 정지' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws StatusStopException      계정이 '정지' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws StatusDeleteException    계정이 '탈퇴' 상태일 경우. ({@link #findAdminWithValidateStatusByAdminId})
+	 * @throws VersionMismatchException 데이터가 다른 곳에서 먼저 수정되어 버전이 일치하지 않는 경우. ({@link Admin#verifyVersion})
+	 * 
+	 * @apiNote 이 메서드 호출 시 발생할 수 있는 예외와 그에 따른 HTTP 응답 코드입니다.
+	 *          <li>Admin Account Errors</li>
+	 *          <li>{@code NoSuchDataException} (관리자 없음): 404 Not Found (Code: 4530)</li>
+	 *          <li>{@code StatusStayException}: 403 Forbidden (Code: 4533)</li>
+	 *          <li>{@code StatusStopException}: 401 Unauthorized (Code: 4534)</li>
+	 *          <li>{@code StatusDeleteException}: 410 Gone (Code: 4535)</li>
+	 *          <li>{@code VersionMismatchException}: 409 Conflict (Code: 4540)</li>
+	 *          </ul>
 	 */
-	public void validatePassword(Admin admin, String reqPassword, String clientIp) {
-		if (!passwordEncoder.matches(reqPassword, admin.getPassword())) {
-			signLogService.signAdmin(admin, SignResult.INVALID_PASSWORD, clientIp);
-			int signFailCount;
-			try {
-				signFailCount = signLogService.validSignFailCount(admin.getAdminId() + "");
-			} catch (TooManySignFailException e) {
-				admin.setAdminStatus(AdminStatus.STAY);
-				adminRepository.save(admin);
-				log.warn("로그인 실패 10회로 계정 일시정지: email={}, ip={}", admin.getEmail(), clientIp);
-				throw e;
-			}
-			throw new MismatchPasswordException(SIGNIN_FAILED, "비밀번호 불일치. 실패 횟수: " + signFailCount);
-		} 
+	@Transactional
+	public void updateName(int adminId, AdminNameRequestDto dto) {
+
+		Admin admin = findAdminWithValidateStatusByAdminId(adminId);
+		admin.verifyVersion(dto.version());
+		admin.modify(dto.name(), null);
+	}
+	
+	private Admin findAdminWithValidateStatusByAdminId(int adminId) {
+		Admin admin = adminRepository.findById(adminId)
+				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
+		admin.validateStatus();
+		return admin;
 	}
 
-	/**
-	 * 유저 상태 검사
-	 * 
-	 * @param admin
-	 * @throws StatusStayException    {@link #validateStatus}
-	 * @throws StatusStopException    {@link #validateStatus}
-	 * @throws StatusDeleteExceptions {@link #validateStatus}
-	 */
-	@SuppressWarnings("incomplete-switch")
-	public static void validateStatus(Admin admin) {
-		switch (admin.getAdminStatus()) {
-		case STAY -> throw new StatusStayException(USER_STATUS_STAY, "일시 정지된 계정. admin.id: " + admin.getAdminId());
-		case STOP -> throw new StatusStopException(USER_STATUS_STOP, "정지된 계정. admin.id: " + admin.getAdminId());
-		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE, "탈퇴한 계정. admin.id: " + admin.getAdminId());
-		}
+	private Admin findAdminWithValidateStatusByEmail(String email) {
+		Admin admin = adminRepository.findByEmail(email)
+				.orElseThrow(() -> new NoSuchDataException(USER_NOT_FOUND, "찾을 수 없는 유저."));
+		admin.validateStatus();
+		return admin;
 	}
-
-	/**
-	 * @param adminStatus
-	 * @throws StatusStayException    {@link #validateStatus}
-	 * @throws StatusStopException    {@link #validateStatus}
-	 * @throws StatusDeleteExceptions {@link #validateStatus}
-	 */
-//	@SuppressWarnings("incomplete-switch")
-//	private void validateStatus(AdminStatus adminStatus) {
-//		switch (adminStatus) {
-//		case STAY -> throw new StatusStayException(USER_STATUS_STAY,"일시 정지된 계정.");
-//		case STOP -> throw new StatusStopException(USER_STATUS_STOP,"정지된 계정.");
-//		case DELETE -> throw new StatusDeleteException(USER_STATUS_DELETE,"탈퇴한 계정.");
-//		}
-//	}
-
-	/**
-	 * Redis에 저장되어있는 Key의 Value와 Request 값 비교
-	 * 
-	 * @param requestValue
-	 * @param redisValue
-	 * @throws TokenValueMismatchException {@link #validateByReidsValue} Redis에
-	 *                                     저장되어있는 Key의 Value와 Request 값 불일치.
-	 */
-//	private void validateByReidsValue(String requestValue, String redisValue) {
-//		if(!Objects.equals(requestValue,redisValue)) {
-//			throw new TokenValueMismatchException(TOKEN_ILLEGAL,"redis에 저장되어있는 key의 value와 request 값 불일치. 입력값: {"+requestValue+"} != 저장값: {"+redisValue+"}.");
-//		}
-//	}
 
 }

@@ -120,6 +120,21 @@ export function createImageHandler(config) {
 			previewContainer.addEventListener('click', _handleDeleteClick);
 			_redrawPreviews(); // 초기 상태 그리기
 		},
+		
+		buildRegisterFormData(dto) {
+			const formData = new FormData();
+
+			// 1. DTO 객체를 JSON 문자열로 변환하여 추가
+			const finalDto = { ...dto};
+			formData.append('dto', new Blob([JSON.stringify(finalDto)], { type: 'application/json' }));
+
+			// 2. 새로 추가된 파일들을 추가
+			newImageFiles.forEach(file => {
+				formData.append('images', file);
+			});
+
+			return formData;
+		},
 
 		// 최종 제출을 위한 FormData 객체를 생성하여 반환
 		buildFormData(dto) {
@@ -127,7 +142,7 @@ export function createImageHandler(config) {
 
 			// 1. DTO 객체를 JSON 문자열로 변환하여 추가
 			const finalDto = { ...dto, deletedImagesPath: deletedImageUrls };
-			formData.append('estimateRequestDto', new Blob([JSON.stringify(finalDto)], { type: 'application/json' }));
+			formData.append('dto', new Blob([JSON.stringify(finalDto)], { type: 'application/json' }));
 
 			// 2. 새로 추가된 파일들을 추가
 			newImageFiles.forEach(file => {

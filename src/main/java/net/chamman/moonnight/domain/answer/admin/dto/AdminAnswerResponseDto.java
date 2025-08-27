@@ -12,9 +12,9 @@ public record AdminAnswerResponseDto(
 		int version,
 		LocalDateTime createdAt
 		) {
-	public static AdminAnswerResponseDto from(Answer answer, int encodedId, int adminId) {
+	public static AdminAnswerResponseDto from(Answer answer, int encodedId, int currentAdminId) {
         String authorName = answer.getAdmin().getName();
-        boolean isMine = answer.verifyAdmin(adminId);
+        boolean isMine = answer.verifyAdmin(currentAdminId);
 		return new AdminAnswerResponseDto(
 				encodedId,
 				authorName,

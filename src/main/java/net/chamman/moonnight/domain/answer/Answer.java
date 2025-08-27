@@ -36,26 +36,26 @@ import net.chamman.moonnight.global.exception.VersionMismatchException;
 @Table(name = "answer")
 public class Answer {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "answer_id")
-    private int answerId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "answer_id")
+	private int answerId;
 
-    // ManyToOne 관계: Answer(N) - Question(1)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", nullable = false, foreignKey = @ForeignKey(name = "FK_question_TO_answer"))
-    @Setter
-    private Question question;
-    
-    // ManyToOne 관계: Answer(N) - Admin(1)
+	// ManyToOne 관계: Answer(N) - Question(1)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "question_id", nullable = false, foreignKey = @ForeignKey(name = "FK_question_TO_answer"))
+	@Setter
+	private Question question;
+
+	// ManyToOne 관계: Answer(N) - Admin(1)
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "admin_id", nullable = false, foreignKey = @ForeignKey(name = "FK_admin_TO_answer"))
 	@Setter
 	private Admin admin;
 
-    @Column(nullable = false, length = 2000)
-    private String content;
-    
+	@Column(nullable = false, length = 2000)
+	private String content;
+
 	@Column(name = "client_ip", length = 50, nullable = false)
 	private String clientIp;
 
@@ -67,23 +67,23 @@ public class Answer {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
-    @Version
-    private int version;
-    
-    public void modify(String content) {
-        if (content != null && !content.isBlank()) {
-            this.content = content;
-        }
-    }
+	@Version
+	private int version;
 
-    public void verifyVersion(int version) {
-    	if(this.version != version) {
-            throw new VersionMismatchException(VERSION_MISMATCH);
-    	}
-    }
-    
-    public boolean verifyAdmin(int adminId) {
-    	return this.admin.getAdminId() == adminId;
-    }
+	public void modify(String content) {
+		if (content != null && !content.isBlank()) {
+			this.content = content;
+		}
+	}
+
+	public void verifyVersion(int version) {
+		if (this.version != version) {
+			throw new VersionMismatchException(VERSION_MISMATCH);
+		}
+	}
+
+	public boolean verifyAdmin(int currentAdminId) {
+		return this.admin.getAdminId() == currentAdminId;
+	}
 
 }

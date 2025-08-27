@@ -1,12 +1,10 @@
-package net.chamman.moonnight.domain.estimate.simple;
+package net.chamman.moonnight.domain.estimate.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import net.chamman.moonnight.domain.estimate.Estimate;
 import net.chamman.moonnight.domain.estimate.Estimate.CleaningService;
-import net.chamman.moonnight.domain.estimate.Estimate.EstimateStatus;
 
 public record SimpleEstimateRequestDto(
 		
@@ -25,16 +23,5 @@ public record SimpleEstimateRequestDto(
 		
 		)
 {
-	public Estimate toEntity(String clientIp) {
-		return Estimate.builder()
-				.name("간편 견적 "+phone)
-				.phone(phone)
-				.phoneAgree(true)
-				.cleaningService(cleaningService.name())
-				.mainAddress(region)
-				.estimateStatus(EstimateStatus.RECEIVE)
-				.clientIp(clientIp)
-				.build();
-	}
 	
 }

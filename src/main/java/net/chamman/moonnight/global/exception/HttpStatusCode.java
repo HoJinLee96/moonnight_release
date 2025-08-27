@@ -56,6 +56,7 @@ public enum HttpStatusCode {
 	// Estimate 456
 	ESTIMATE_NOT_FOUND(404,"4560","message.estimate.not_found"),
 	ESTIMATE_STATUS_DELETE(404,"4561","message.estimate.status_delete"),
+	ESTIMATE_VERIFICATION_REQUIRED(404,"4562","message.estimate.verification_required"),
 	
 	// Question 465
 	QUESTION_NOT_FOUND(404,"4650","message.question.not_found"),

@@ -16,9 +16,7 @@ const handleResponse = async (response) => {
 		return null;
 	}
 	const apiResponse = await response.json();
-	if (apiResponse.status !== 200 && apiResponse.status !== 201) {
-		throw new Error(apiResponse.message || 'API 응답 상태가 정상이 아닙니다.');
-	}
+	console.log(apiResponse);
 	return apiResponse.data;
 };
 
@@ -52,11 +50,11 @@ export const createComment = async (commentData) => {
  * @param {string} commentText - 수정할 댓글 내용
  * @returns {Promise<object>} - 수정된 댓글 객체
  */
-export const updateComment = async (commentId, newText) => {
+export const updateComment = async (commentId, newText, version) => {
 	const response = await fetch(`${BASE_URL}/private/${commentId}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ commentText: newText })
+		body: JSON.stringify({ comment: newText, version: version })
 	});
 	return handleResponse(response);
 };
@@ -66,9 +64,11 @@ export const updateComment = async (commentId, newText) => {
  * @param {number} commentId - 댓글 ID
  * @returns {Promise<null>}
  */
-export const deleteComment = async (commentId) => {
+export const deleteComment = async (commentId, version) => {
+	
 	const response = await fetch(`${BASE_URL}/private/${commentId}`, {
-		method: 'DELETE'
+		method: 'DELETE',
+		body: new URLSearchParams({ version })
 	});
 	return handleResponse(response);
 };

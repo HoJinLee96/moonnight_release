@@ -19,38 +19,39 @@ public class AdminMyPageViewController {
 
 	private final AdminService adminService;
 
-	@GetMapping("/my")
+	@GetMapping("/admin/my")
 	public String showMy(@AuthenticationPrincipal CustomAdminDetails adminDetails, Model model) {
-		return "my/my";
+		return "admin/my/my";
 	}
 
-	@GetMapping("/my/signInfo")
+	@GetMapping("/admin/my/signInfo")
 	public String showMyLoginInfo(@AuthenticationPrincipal CustomAdminDetails adminDetails, Model model) {
 
-		Admin admin = adminService.getActiveAdminByAdminId(adminDetails.getAdminId());
-		model.addAttribute("admin", AdminResponseDto.fromEntity(admin));
+		Admin admin = adminService.getActiveAdminById(adminDetails.getAdminId());
+		model.addAttribute("admin", AdminResponseDto.from(admin));
 
-		return "my/mySignInfo";
+		return "admin/my/mySignInfo";
 	}
 
-	@GetMapping("/my/profile")
+	@GetMapping("/admin/my/signInfo/password")
+	public String showMyPassword(@AuthenticationPrincipal CustomAdminDetails adminDetails, Model model) {
+		Admin admin = adminService.getActiveAdminById(adminDetails.getAdminId());
+		model.addAttribute("admin", AdminResponseDto.from(admin));
+		return "admin/my/myPassword";
+	}
+
+	@GetMapping("/admin/my/signInfo/withdrawal")
+	public String showWithdrawal() {
+		return "admin/my/withdrawal";
+	}
+
+	@GetMapping("/admin/my/profile")
 	public String showMyProfile(@AuthenticationPrincipal CustomAdminDetails adminDetails, Model model) {
 
-		Admin admin = adminService.getActiveAdminByAdminId(adminDetails.getAdminId());
-		model.addAttribute("admin", AdminResponseDto.fromEntity(admin));
+		Admin admin = adminService.getActiveAdminById(adminDetails.getAdminId());
+		model.addAttribute("admin", AdminResponseDto.from(admin));
 
-		return "my/myProfile";
+		return "admin/my/myProfile";
 	}
 
-	@GetMapping("/my/signInfo/password")
-	public String showMyPassword(@AuthenticationPrincipal CustomAdminDetails adminDetails, Model model) {
-		Admin admin = adminService.getActiveAdminByAdminId(adminDetails.getAdminId());
-		model.addAttribute("admin", AdminResponseDto.fromEntity(admin));
-		return "my/myPassword";
-	}
-
-	@GetMapping("/my/signInfo/withdrawal")
-	public String showWithdrawal() {
-		return "my/withdrawal";
-	}
 }

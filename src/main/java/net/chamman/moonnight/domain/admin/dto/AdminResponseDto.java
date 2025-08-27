@@ -13,22 +13,22 @@ public record AdminResponseDto(
 		String name,
 		String phone,
 		AdminStatus adminStatus,
+		int version,
 		LocalDateTime createdAt,
-		LocalDateTime updatedAt,
-		Long version
+		LocalDateTime updatedAt
 		
 		) 
 {
 	
-	public static AdminResponseDto fromEntity(Admin admin) {
+	public static AdminResponseDto from(Admin admin) {
 		return AdminResponseDto.builder()
 				.email(admin.getEmail())
 				.name(admin.getName())
 				.phone(admin.getPhone())
 				.adminStatus(admin.getAdminStatus())
+				.version(admin.getVersion())
 				.createdAt(admin.getCreatedAt())
 				.updatedAt(admin.getUpdatedAt())
-				.version(admin.getVersion())
 				.build();
 	}
 }

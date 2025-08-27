@@ -1,4 +1,4 @@
-package net.chamman.moonnight.domain.estimate.dto;
+package net.chamman.moonnight.domain.estimate.admin.dto;
 
 import java.time.LocalDate;
 

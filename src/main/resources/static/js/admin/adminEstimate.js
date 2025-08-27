@@ -57,11 +57,11 @@ export const updateEstimate = async (estimateId, formData) => {
 	return handleResponse(response);
 };
 
-export const updateEstimateStatus = async (estimateId, estimateStatus) => {
-	const response = await fetch(`${BASE_URL}/update/status/${estimateId}`, {
+export const updateEstimateStatus = async (data) => {
+	const response = await fetch(`${BASE_URL}/update/status}`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(estimateStatus)
+		body: JSON.stringify(data)
 	});
 	return handleResponse(response);
 };
@@ -72,18 +72,20 @@ export const updateEstimateStatus = async (estimateId, estimateStatus) => {
  * @param {string} targetStatus - 목표 상태 (예: 'IN_PROGRESS')
  * @returns {Promise<any>}
  */
-export const updateMultipleEstimateStatus = async (estimateIds, estimateStatus) => {
+export const updateMultipleEstimateStatus = async (data) => {
 	const response = await fetch(`${BASE_URL}/update/status/bulk`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ estimateIds, estimateStatus })
+		body: JSON.stringify(data)
 	});
 	return handleResponse(response);
 };
 
-export const deleteEstimate = async (estimateId) => {
+export const deleteEstimate = async (estimateId, version) => {
 	const response = await fetch(`${BASE_URL}/${estimateId}`, {
 		method: "DELETE",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: new URLSearchParams({ version })
 	});
 
 	return handleResponse(response);
