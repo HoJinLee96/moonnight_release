@@ -1,9 +1,12 @@
 package net.chamman.moonnight.global.util;
 
+import java.util.Collections;
 import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -14,6 +17,9 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 	
 	@Override
 	public String convertToDatabaseColumn(List<String> attribute) {
+		if (attribute == null || attribute.isEmpty()) {
+            return ""; 
+        }
 		try {
 			return objectMapper.writeValueAsString(attribute);
 		} catch (JsonProcessingException e) {
@@ -23,6 +29,9 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 	
 	@Override
 	public List<String> convertToEntityAttribute(String dbData) {
+		if (dbData == null || dbData.isBlank()) {
+            return Collections.emptyList(); 
+        }
 		try {
 			return objectMapper.readValue(dbData, new TypeReference<List<String>>() {});
 		} catch (Exception e) {

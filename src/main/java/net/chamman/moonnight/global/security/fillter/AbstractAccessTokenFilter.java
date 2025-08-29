@@ -62,8 +62,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 //		 1. 토큰 null 체크
 		if (StringUtils.isBlank(accessToken) || StringUtils.isBlank(refreshToken)) {
 			log.warn("* 토큰 누락 또는 빈 값.");
-			initTokenToCookie(res);
-			setErrorResponse(res, 4011, "유효하지 않은 요청 입니다.");
+			filterChain.doFilter(req, res);
 			return;
 		}
 
@@ -72,8 +71,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 
 //		 2-1. 로그아웃한 토큰
 		if (Objects.equals(value, "SIGNOUT")) {
-			initTokenToCookie(res);
-			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
+			filterChain.doFilter(req, res);
 			return;
 
 //		2-2. 유저 정보 업데이트된 토큰
@@ -84,9 +82,7 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 				filterChain.doFilter(req, res);
 				return;
 			} catch (Exception refreshEx) {
-				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
-				initTokenToCookie(res);
-				setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
+				filterChain.doFilter(req, res);
 				return;
 			}
 		}
@@ -107,16 +103,13 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 				return;
 
 			} catch (Exception refreshEx) {
-				// 리프레쉬 토큰 통해 SignIn Tokens 재발급 실패
-				initTokenToCookie(res);
-				setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
+				filterChain.doFilter(req, res);
 				return;
 			}
 			// 그 외 에러
 		} catch (Exception e) {
 			log.error("* accressToken validate 실패 또는 CustomAdminDetails 생성 중 실패.", e);
-			initTokenToCookie(res);
-			setErrorResponse(res, 4010, "유효하지 않은 요청 입니다.");
+			filterChain.doFilter(req, res);
 			return;
 		}
 	}
@@ -191,4 +184,5 @@ public abstract class AbstractAccessTokenFilter<T extends UserDetails> extends O
 				adminDetails.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
+
 }

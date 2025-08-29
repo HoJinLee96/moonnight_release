@@ -75,13 +75,13 @@
 			margin-bottom: 20px;
 		}
 
-		.form-group label {
+		.form-group label:not([for="email-agreement"], [for="phone-agreement"]) {
 			display: block;
 			margin-bottom: 8px;
 			font-weight: bold;
 		}
 
-		.form-group input,
+		.form-group input:not([id="email-agreement"], [id="phone-agreement"]),
 		.form-group select {
 			width: 100%;
 			padding: 9px;
@@ -520,8 +520,30 @@
 			flex-shrink: 0;
 			/* 버튼 크기 고정 */
 		}
-		.comment-body p{
+
+		.comment-body p {
 			margin: 0px;
+		}
+
+		.agreement-group {
+			display: flex;
+			justify-content: right;
+			padding-top: 5px;
+			align-items: center;
+		}
+
+		.agreement-group label {
+			color: #555;
+			font-size: 14px;
+			cursor: pointer;
+		}
+
+		.agreement-group a {
+			text-decoration: none;
+			color: #555;
+			font-size: 14px;
+			cursor: pointer;
+			margin-left: 5px;
 		}
 	</style>
 </head>
@@ -633,7 +655,7 @@
 	<script th:inline="javascript">
 		/*<![CDATA[*/
 		const statusLabels = /*[[${estimateStatuses}]]*/ {};
-		window.cleaningServices = /*[[${cleaningServices}]]*/null;
+		const cleaningServices = /*[[${cleaningServices}]]*/null;
 		const currentAdminName = /*[[${currentAdminName}]]*/ '현재 관리자';
 
 		/*]]>*/
@@ -782,16 +804,21 @@
 					updateApiFunction: updateEstimate,
 					onSaveSuccess: (updatedEstimate) => {
 
-						dom.modal.style.display = 'none';
+						state.estimates = state.estimates.map(item =>
+							item.estimateId === updatedEstimate.estimateId ? updatedEstimate : item
+						);
+						renderModal(updatedEstimate);
 
 						// 2. 방어 코드 추가
+						/*
+						dom.modal.style.display = 'none';
 						if (updatedEstimate && updatedEstimate.estimateId) {
 							// 캐시 데이터 업데이트
 							state.estimates = state.estimates.map(item =>
 								item.estimateId === updatedEstimate.estimateId ? updatedEstimate : item
 							);
 						}
-
+						*/
 						// 목록 다시 그리기 및 상태 카운트 업데이트
 						handleSearch(true); // true를 줘서 현재 페이지를 유지하도록 함
 					},
@@ -800,16 +827,17 @@
 			});
 
 			dom.modalContent.querySelector('.btn-delete').addEventListener('click', () => {
-				handleDelete(safeData.estimateId);
+				handleDelete(safeData.estimateId, safeData.version);
 			});
 
 			commentSection.innerHTML = '<p>댓글 로딩 중...</p>'; // 로딩 표시
 			try {
-				state.currentComments = await getCommentsByEstimateId(safeData.estimateId);
+				const json = await getCommentsByEstimateId(safeData.estimateId);
+				state.currentComments = json ? json : [];
 				renderComments(safeData.estimateId);
 			} catch (error) {
 				console.error("댓글 로딩 실패:", error);
-				// 이제 이 코드는 정상적으로 작동할 것!
+				alert(error.message);
 				commentSection.innerHTML = `<p>댓글을 불러오는 중 오류가 발생했습니다.</p>`;
 			}
 
@@ -822,19 +850,19 @@
 			const comments = state.currentComments;
 
 			const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleString('ko-KR') : '날짜 정보 없음';
-
-			const commentsHtml = comments.map(comment => {
-				// isMine 값에 따라 버튼의 표시 여부를 결정
-				const actionButtonsHtml = comment.isMine ? `
+			if (comments) {
+				const commentsHtml = comments.map(comment => {
+					// isMine 값에 따라 버튼의 표시 여부를 결정
+					const actionButtonsHtml = comment.isMine ? `
 						<div class="comment-actions">
 							<button class="btn-comment-edit">수정</button>
 							<button class="btn-comment-delete">삭제</button>
 						</div>
 					` : '';
-				const authorDisplayName = comment.authorName;
+					const authorDisplayName = comment.authorName;
 
-				return `
-							<div class="comment-item" data-comment-id="${comment.commentId}">
+					return `
+							<div class="comment-item" data-comment-id="${comment.commentId}" data-version="${comment.version}">
 								<div class="comment-header">
 									<span class="comment-author">${authorDisplayName}</span>
 									${actionButtonsHtml}
@@ -845,15 +873,15 @@
 								<div class="comment-dates">
 									<span>작성: ${formatDate(comment.createdAt)}</span>
 									${comment.updatedAt && comment.createdAt !== comment.updatedAt
-						? ` | <span class="modified-tag">(수정됨)</span> ${formatDate(comment.updatedAt)}`
-						: ''
-					}
+							? ` | <span class="modified-tag">(수정됨)</span> ${formatDate(comment.updatedAt)}`
+							: ''
+						}
 								</div>
 							</div>
 						`;
-			}).join('');
+				}).join('');
 
-			commentSection.innerHTML = `
+				commentSection.innerHTML = `
 						<h4>관리자 댓글 (${comments.length}개)</h4>
 						<div class="comment-list">${comments.length > 0 ? commentsHtml : '<p>작성된 댓글이 없습니다.</p>'}</div>
 						<form class="comment-form">
@@ -862,6 +890,16 @@
 						</form>
 					`;
 
+			} else {
+				commentSection.innerHTML = `
+						<h4>관리자 댓글 (0개)</h4>
+						<div class="comment-list"><p>작성된 댓글이 없습니다.</p></div>
+						<form class="comment-form">
+							<textarea name="commentText" placeholder="댓글을 입력하세요..." required></textarea>
+							<button type="submit" class="btn">등록</button>
+						</form>
+					`;
+			}
 			// 동적으로 생성된 요소들에 이벤트 리스너 연결
 			addCommentEventListeners(estimateId);
 		};
@@ -878,7 +916,8 @@
 				if (!commentText) return;
 
 				try {
-					const newComment = await createComment({estimateId, commentText});
+					const commentData = {estimateId: estimateId, commentText: commentText};
+					const newComment = await createComment(commentData);
 					state.currentComments.push(newComment); // 상태 업데이트
 					renderComments(estimateId); // 다시 그리기
 				} catch (error) {
@@ -892,12 +931,13 @@
 				if (!commentItem) return;
 
 				const commentId = parseInt(commentItem.dataset.commentId, 10);
+				const version = parseInt(commentItem.dataset.version, 10);
 				const comment = state.currentComments.find(c => c.commentId === commentId);
 
 				if (!comment || !comment.isMine) {
 					// 수정/삭제 버튼이 없는 댓글의 다른 영역을 클릭했을 때를 대비
 					if (e.target.matches('.btn-comment-edit') || e.target.matches('.btn-comment-delete')) {
-						console.warn("자신의 댓글이 아니므로 수정/삭제할 수 없습니다.");
+						console.error("자신의 댓글이 아니므로 수정/삭제할 수 없습니다.");
 					}
 					return;
 				}
@@ -910,7 +950,7 @@
 				if (e.target.matches('.btn-comment-delete')) {
 					if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
 						try {
-							await deleteComment(commentId);
+							await deleteComment(commentId, version);
 							state.currentComments = state.currentComments.filter(c => c.commentId !== commentId);
 							renderComments(estimateId);
 						} catch (error) {
@@ -924,6 +964,7 @@
 		/** 댓글 수정 UI를 처리하는 함수 */
 		const handleEditComment = (commentItem) => {
 			const commentId = parseInt(commentItem.dataset.commentId, 10);
+			const version = parseInt(commentItem.dataset.version, 10);
 			const comment = state.currentComments.find(c => c.commentId === commentId);
 			const bodyDiv = commentItem.querySelector('.comment-body');
 			const originalHtml = bodyDiv.innerHTML; // 원래 내용 저장
@@ -945,7 +986,7 @@
 					return;
 				}
 				try {
-					const updatedComment = await updateComment(commentId, newText);
+					const updatedComment = await updateComment(commentId, newText, version);
 					// 상태 업데이트
 					const index = state.currentComments.findIndex(c => c.commentId === commentId);
 					if (index !== -1) {
@@ -1082,16 +1123,37 @@
 
 		/** 9. 일괄 변경 버튼 클릭 로직 */
 		const handleBulkUpdate = async () => {
-			if (state.selectedIds.size === 0) return;
+			// 1. 선택된 아이템이 없으면 바로 종료
+			if (state.selectedIds.size === 0) {
+				alert('변경할 견적을 선택해주세요.');
+				return;
+			}
 
+			// 2. 다음 상태 값 결정
 			const estimateStatus = state.currentStatus === 'RECEIVE' ? 'IN_PROGRESS' : 'COMPLETE';
 			const estimateStatusLabel = statusLabels[estimateStatus];
 			const idsToUpdate = Array.from(state.selectedIds);
+
+			// 3. (핵심) 백엔드가 요구하는 데이터 형태로 가공
+			// state에 전체 견적 목록(estimates)이 있고, 각 견적 객체에 id와 version이 있다고 가정할게.
+			// 만약 변수명이 다르면 네 코드에 맞게 수정해야 해!
+			const payload = idsToUpdate.map(id => {
+				// 전체 목록에서 현재 id에 해당하는 견적 데이터를 찾아서 version 값을 가져옴
+				const currentEstimate = state.estimates.find(e => e.estimateId === id);
+				return {
+					estimateId: id,
+					estimateStatus: estimateStatus,
+					version: currentEstimate.version
+				};
+			});
+
+			// 4. 사용자에게 확인 받기
 			if (confirm(`${idsToUpdate.length}개의 견적을 '${estimateStatusLabel}' 상태로 변경하시겠습니까?`)) {
 				try {
-					await updateMultipleEstimateStatus(idsToUpdate, estimateStatus);
+					// 5. 가공된 payload를 API 함수에 전달
+					await updateMultipleEstimateStatus(payload);
 					alert('상태가 성공적으로 변경되었습니다.');
-					handleSearch(true); // 현재 페이지에서 목록 새로고침
+					handleSearch(true); // 목록 새로고침
 				} catch (error) {
 					alert(`상태 변경 실패: ${error.message}`);
 				}
@@ -1108,10 +1170,10 @@
 		};
 
 		// 4. 삭제 처리 함수 수정
-		const handleDelete = async (estimateId) => {
+		const handleDelete = async (estimateId, version) => {
 			if (confirm('정말로 이 견적서를 삭제하시겠습니까?')) {
 				try {
-					await deleteEstimate(estimateId);
+					await deleteEstimate(estimateId, version);
 					alert('삭제되었습니다.');
 					dom.modal.style.display = 'none'; // 상세 모달 닫기
 					handleSearch(true); // 현재 페이지에서 목록 새로고침

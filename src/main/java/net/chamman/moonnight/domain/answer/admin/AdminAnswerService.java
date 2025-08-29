@@ -16,7 +16,6 @@ import net.chamman.moonnight.domain.answer.AnswerRepository;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerCreateRequestDto;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerDeleteRequestDto;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerModifyRequestDto;
-import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerResponseDto;
 import net.chamman.moonnight.domain.question.Question;
 import net.chamman.moonnight.domain.question.QuestionRepository;
 import net.chamman.moonnight.global.annotation.ActiveAdminOnly;
@@ -31,58 +30,57 @@ public class AdminAnswerService {
 	private final QuestionRepository questionRepository;
 	private final AdminService adminService;
 	private final Obfuscator obfuscator;
-	
-	@Transactional
-	public AdminAnswerResponseDto registerAnswer(int adminId, AdminAnswerCreateRequestDto dto, String clientIp) {
-		Admin admin = adminService.getActiveAdminByAdminId(adminId);
-        Question question = questionRepository.findById(obfuscator.decode(dto.questionId()))
-                .orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
-        
-		Answer answer = Answer.builder()
-				.question(question)
-				.admin(admin)
-	            .content(dto.content())
-	            .clientIp(clientIp)
-	            .build();
-		answerRepository.save(answer);
-		
-		question.markAsAnswered();
-		return convertToDto(answer, adminId);
-	}
-	
+
 	@ActiveAdminOnly
 	@Transactional
-	public AdminAnswerResponseDto modifyAnswer(int adminId, int answerId, AdminAnswerModifyRequestDto dto) {
-		Answer answer = findAnswerWithAuthById(adminId, answerId, dto.version());
-		answer.modify(dto.content());
-		
-		return convertToDto(answer, adminId);
+	public Answer registerAnswer(int adminId, AdminAnswerCreateRequestDto dto, String clientIp) {
+
+		Admin admin = adminService.getActiveAdminById(adminId);
+
+		Question question = questionRepository.findById(obfuscator.decode(dto.questionId()))
+				.orElseThrow(() -> new NoSuchDataException(QUESTION_NOT_FOUND));
+
+		Answer answer = Answer.builder().question(question).admin(admin).content(dto.content()).clientIp(clientIp)
+				.build();
+		answerRepository.save(answer);
+
+		question.markAsAnswered();
+		return answer;
 	}
-	
+
+	@ActiveAdminOnly
+	@Transactional
+	public Answer modifyAnswer(int adminId, int answerId, AdminAnswerModifyRequestDto dto) {
+
+		Answer answer = findAnswerWithAuthById(adminId, answerId, dto.version());
+
+		answer.modify(dto.content());
+
+		return answer;
+	}
+
 	@ActiveAdminOnly
 	@Transactional
 	public void deleteAnswer(int adminId, int answerId, AdminAnswerDeleteRequestDto dto) {
+
 		Answer answer = findAnswerWithAuthById(adminId, answerId, dto.version());
+
 		answerRepository.delete(answer);
+
 		Question question = answer.getQuestion();
-		if(answerRepository.countByQuestion_QuestionId(question.getQuestionId()) == 0) {
+		if (answerRepository.countByQuestion_QuestionId(question.getQuestionId()) == 0) {
 			question.revertToPending();
 		}
 	}
-	
-    private Answer findAnswerWithAuthById(int adminId, int answerId, int version) {
-    	Answer answer = answerRepository.findByIdWithAdmin(obfuscator.decode(answerId))
-                .orElseThrow(() -> new NoSuchDataException(ANSWER_NOT_FOUND));
-        if (!answer.verifyAdmin(adminId)) {
-            throw new ForbiddenException(AUTHORIZATION_FAILED, "답변 작성자가 일치하지 않음.");
-        }
-        answer.verifyVersion(version);
-        return answer;
-    }
 
-    private AdminAnswerResponseDto convertToDto(Answer answer, int adminId) {
-        int encodedId = obfuscator.encode(answer.getAnswerId());
-        return AdminAnswerResponseDto.from(answer, encodedId, adminId);
-    }
-    
+	private Answer findAnswerWithAuthById(int currentAdminId, int answerId, int version) {
+		Answer answer = answerRepository.findByIdWithAdmin(obfuscator.decode(answerId))
+				.orElseThrow(() -> new NoSuchDataException(ANSWER_NOT_FOUND));
+		if (!answer.verifyAdmin(currentAdminId)) {
+			throw new ForbiddenException(AUTHORIZATION_FAILED, "답변 작성자가 일치하지 않음.");
+		}
+		answer.verifyVersion(version);
+		return answer;
+	}
+
 }

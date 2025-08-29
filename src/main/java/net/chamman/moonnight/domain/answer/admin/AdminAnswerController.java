@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.chamman.moonnight.auth.crypto.Obfuscator;
+import net.chamman.moonnight.domain.answer.Answer;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerCreateRequestDto;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerDeleteRequestDto;
 import net.chamman.moonnight.domain.answer.admin.dto.AdminAnswerModifyRequestDto;
@@ -34,43 +36,49 @@ public class AdminAnswerController {
 
 	private final AdminAnswerService adminAnswerService;
 	private final ApiResponseFactory apiResponseFactory;
-	
+	private final Obfuscator obfuscator;
+
 	@Operation(summary = "[관리자] 답변 등록")
 	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("/register") 
+	@PostMapping("/register")
 	public ResponseEntity<ApiResponseDto<AdminAnswerResponseDto>> registerAnswer(
 			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
-			@Valid @RequestBody AdminAnswerCreateRequestDto dto){
-		
+			@Valid @RequestBody AdminAnswerCreateRequestDto dto) {
+
 		String clientIp = CustomRequestContextHolder.getClientIp();
 
-		AdminAnswerResponseDto resDto = adminAnswerService.registerAnswer(customAdminDetails.getAdminId(), dto, clientIp);
-				
-		return ResponseEntity.ok(apiResponseFactory.success(CREATE_SUCCESS, resDto));
+		Answer answer = adminAnswerService.registerAnswer(customAdminDetails.getAdminId(), dto, clientIp);
+
+		return ResponseEntity
+				.ok(apiResponseFactory.success(CREATE_SUCCESS, convertToDto(answer, customAdminDetails.getAdminId())));
 	}
-	
+
 	@Operation(summary = "[관리자] 답변 수정")
 	@PreAuthorize("hasRole('ADMIN')")
-	@PatchMapping("/{answerId}") 
+	@PatchMapping("/{answerId}")
 	public ResponseEntity<ApiResponseDto<AdminAnswerResponseDto>> modifyAnswer(
-			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
-            @PathVariable int answerId,
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, @PathVariable int answerId,
 			@Valid @RequestBody AdminAnswerModifyRequestDto dto) {
-		
-		AdminAnswerResponseDto resDto = adminAnswerService.modifyAnswer(customAdminDetails.getAdminId(), answerId, dto);
-		
-		return ResponseEntity.ok(apiResponseFactory.success(UPDATE_SUCCESS, resDto));
+
+		Answer answer = adminAnswerService.modifyAnswer(customAdminDetails.getAdminId(), answerId, dto);
+
+		return ResponseEntity
+				.ok(apiResponseFactory.success(UPDATE_SUCCESS, convertToDto(answer, customAdminDetails.getAdminId())));
 	}
-	
+
 	@Operation(summary = "[관리자] 답변 삭제 (하드 삭제)")
 	@PreAuthorize("hasRole('ADMIN')")
-	@DeleteMapping("/{answerId}") 
+	@DeleteMapping("/{answerId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteAnswer(
-			@AuthenticationPrincipal CustomAdminDetails customAdminDetails,
-            @PathVariable int answerId,
+			@AuthenticationPrincipal CustomAdminDetails customAdminDetails, @PathVariable int answerId,
 			@Valid @RequestBody AdminAnswerDeleteRequestDto dto) {
-		
+
 		adminAnswerService.deleteAnswer(customAdminDetails.getAdminId(), answerId, dto);
+		
 		return ResponseEntity.ok(apiResponseFactory.success(DELETE_SUCCESS));
+	}
+
+	private AdminAnswerResponseDto convertToDto(Answer answer, int adminId) {
+		return AdminAnswerResponseDto.from(answer, obfuscator.encode(answer.getAnswerId()), adminId);
 	}
 }

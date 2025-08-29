@@ -15,8 +15,6 @@ public record EstimateResponseDto(
      String name,
      String phone,
      String email,
-     boolean emailAgree,
-     boolean phoneAgree,
      String postcode,
      String mainAddress,
      String detailAddress,
@@ -24,6 +22,7 @@ public record EstimateResponseDto(
      String content,
      List<String> images,
      EstimateStatus estimateStatus,
+     int version,
      LocalDateTime createdAt,
      LocalDateTime updatedAt
     ) {
@@ -34,8 +33,6 @@ public record EstimateResponseDto(
     .name(estimate.getName())
     .phone(estimate.getPhone())
     .email(estimate.getEmail())
-    .emailAgree(estimate.isEmailAgree())
-    .phoneAgree(estimate.isPhoneAgree())
     .postcode(estimate.getPostcode())
     .mainAddress(estimate.getMainAddress())
     .detailAddress(estimate.getDetailAddress())
@@ -43,6 +40,7 @@ public record EstimateResponseDto(
     .content(estimate.getContent())
     .images(estimate.getImagesPath())
     .estimateStatus(estimate.getEstimateStatus())
+    .version(estimate.getVersion())
     .createdAt(estimate.getCreatedAt())
     .updatedAt(estimate.getUpdatedAt())
     .build();

@@ -42,7 +42,7 @@ public class VerificationController {
 	@Operation(summary = "휴대폰 문자 인증번호 검사", description = "휴대폰 문자 인증번호 검사")
 	@PostMapping("/public/compare/sms/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareSmsVerification(
-			@ClientSpecific("X-Verification-Id") String verificationId,
+			@ClientSpecific("X-Verification-Phone-Id") String verificationId,
 			@Valid @RequestBody VerificationPhoneRequestDto verificationPhoneRequestDto,
 			HttpServletRequest request) {
 		
@@ -76,7 +76,7 @@ public class VerificationController {
 	@Operation(summary = "이메일 인증 인증번호 검사", description = "이메일 인증 인증번호 검사")
 	@PostMapping("/public/compare/email/uuid")
 	public ResponseEntity<ApiResponseDto<Map<String,String>>> compareEmailVerification(
-			@ClientSpecific("X-Verification-Id") String verificationId,
+			@ClientSpecific("X-Verification-Email-Id") String verificationId,
 			@Valid @RequestBody VerificationEmailRequestDto verificationEmailRequestDto,
 			HttpServletRequest request) {
 		
@@ -119,9 +119,9 @@ public class VerificationController {
 		String encodingVerificationId = verificationService.sendSmsVerificationCode(phone, clientIp)+"";
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Phone-Id",encodingVerificationId)));
 		}else {
-			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
+			ResponseCookie cookie = ResponseCookie.from("X-Verification-Phone-Id", encodingVerificationId)
 					.httpOnly(true)
 					.secure(true)
 					.path("/")
@@ -148,9 +148,9 @@ public class VerificationController {
 		String encodingVerificationId = verificationService.sendEmailVerificationCode(email, clientIp)+"";
 		
 		if(isMobileApp) {
-			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Id",encodingVerificationId)));
+			return ResponseEntity.ok(apiResponseFactory.success(SUCCESS, Map.of("X-Verification-Email-Id",encodingVerificationId)));
 		}else {
-			ResponseCookie cookie = ResponseCookie.from("X-Verification-Id", encodingVerificationId)
+			ResponseCookie cookie = ResponseCookie.from("X-Verification-Email-Id", encodingVerificationId)
 					.httpOnly(true)
 					.secure(true)
 					.path("/")

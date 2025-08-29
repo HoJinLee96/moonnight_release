@@ -84,7 +84,7 @@
 			}
 
 			.timer {
-				width: 35px;
+				width: 50px;
 				position: absolute;
 				right: 12px;
 				top: 50%;
@@ -173,17 +173,6 @@
 		</style>
 		<style>
 			/* 공용 버튼 스타일 */
-			.btn {
-				padding: 12px 20px;
-				border: none;
-				border-radius: 5px;
-				cursor: pointer;
-				font-size: 16px;
-				font-weight: bold;
-				transition: all 0.2s ease;
-				flex-shrink: 0;
-				text-decoration: none;
-			}
 
 			.btn:disabled {
 				background-color: #ccc;
@@ -299,7 +288,7 @@
 		import {validate} from '/js/validate.js';
 		import {initPhoneFormatting, initVerificationCodeFormatting, formatAdminStatus, formatDate1} from '/js/format.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
-		import {isEmailExistForFindEmail} from '/js/admin/admin.js';
+		import {findAdminEmail} from '/js/admin/adminSign.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
 		document.addEventListener("DOMContentLoaded", () => {
@@ -330,6 +319,8 @@
 
 					alert('인증번호가 발송되었습니다.');
 					phoneInput.readOnly = true;
+					sendSmsButton.textContent = '재전송';
+					sendSmsButton.classList = 'btn btn-secondary';
 					verificationGroup.style.display = 'block';
 					verificationCodeInput.disabled = false;
 					verifySmsCodeButton.disabled = false;
@@ -353,7 +344,7 @@
 					validate('code', code);
 
 					await verifySmsCode(phone, code);
-					const json = await isEmailExistForFindEmail(phone);
+					const json = await findAdminEmail(phone);
 					const data = json.data;
 					stopCountdown(timerDisplay);
 
@@ -369,7 +360,7 @@
 						// [LOCAL 회원일 경우]
 						displayBox.innerHTML = `
 			                    <ul style="list-style-type: none; padding: 0; margin: 0; line-height: 2;">
-			                        <li><strong>통합 회원 이메일:</strong> ${data.email}</li>
+			                        <li><strong>이메일:</strong> ${data.email}</li>
 			                    </ul>
 			                `;
 						findPasswordButton.style.display = 'inline-flex';

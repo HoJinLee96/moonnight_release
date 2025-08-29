@@ -88,7 +88,7 @@
 			<nav class="nav--top">
 				<ul id="user-header" sec:authorize="isAuthenticated()">
 					<li><span id="user-welcome" th:text="|${#authentication.principal.name}님|"></span></li>
-					<li><a th:href="@{/my}">마이페이지</a></li>
+					<li><a th:href="@{/admin/my}">마이페이지</a></li>
 					<li><a href="" id="signOut">로그아웃</a></li>
 				</ul>
 			</nav>

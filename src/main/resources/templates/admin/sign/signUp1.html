@@ -292,8 +292,7 @@
 		import {initVerificationCodeFormatting} from '/js/format.js';
 		import {validate, ValidationError, validateConfirmPassword} from '/js/validate.js';
 		import {sendEmail, verifyMailCode} from '/js/emailVerification.js'; // 수정된 API 함수
-		import {signUpStep1} from '/js/admin/adminSign.js';
-		import {isEmailExist} from '/js/admin/admin.js';
+		import {isEmailExistForSignUp, signUpStep1} from '/js/admin/adminSign.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
 
 		document.addEventListener('DOMContentLoaded', () => {
@@ -340,7 +339,7 @@
 					validate('email', email);
 
 					// 2. 이메일 중복 검사 API 호출 
-					await isEmailExist(email);
+					await isEmailExistForSignUp(email);
 
 					// 3. 인증번호 발송 API 호출
 					await sendEmail(email);

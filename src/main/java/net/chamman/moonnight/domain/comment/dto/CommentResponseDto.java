@@ -3,8 +3,6 @@ package net.chamman.moonnight.domain.comment.dto;
 import java.time.LocalDateTime;
 
 import lombok.Builder;
-import net.chamman.moonnight.auth.crypto.Obfuscator;
-import net.chamman.moonnight.domain.admin.Admin;
 import net.chamman.moonnight.domain.comment.Comment;
 
 @Builder
@@ -15,20 +13,21 @@ public record CommentResponseDto(
     String commentText,
     LocalDateTime createdAt, 
     LocalDateTime updatedAt,
+    int version,
     boolean isMine,
     String authorName
 
 ) {
-  public static CommentResponseDto fromEntity(Comment comment, Admin admin, Obfuscator obfuscator) {
-    boolean isMine = comment.getAdmin().getAdminId()==admin.getAdminId();
+  public static CommentResponseDto fromEntity(Comment comment, int encodedEstimateId, int encodedCommentId, int currentAdminId) {
     return CommentResponseDto.builder()
-    .estimateId(obfuscator.encode(comment.getEstimate().getEstimateId()))
-    .commentId(obfuscator.encode(comment.getCommentId()))
+    .estimateId(encodedEstimateId)
+    .commentId(encodedCommentId)
     .commentText(comment.getCommentText())
     .createdAt(comment.getCreatedAt())
     .updatedAt(comment.getUpdatedAt())
-    .isMine(isMine)
-    .authorName(admin.getName())
+    .version(comment.getVersion())
+    .isMine(comment.verifyAdmin(currentAdminId))
+    .authorName(comment.getAdmin().getName())
     .build();
   }
 }

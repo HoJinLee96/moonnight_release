@@ -1086,8 +1086,6 @@
 				// 1. 서버에 보낼 DTO 객체 생성
 				const estimateDto = {
 					name: nameInput.value,
-					phoneAgree: authPhoneRadio.checked,
-					emailAgree: authEmailRadio.checked,
 					phone: phoneInput.value,
 					email: emailInput.value,
 					postcode: postcode.value,
@@ -1097,7 +1095,7 @@
 					content: contentTextArea.value
 				};
 
-				const formData = imageHandler.buildFormData(estimateDto);
+				const formData = imageHandler.buildRegisterFormData(estimateDto);
 
 				try {
 					// 2. API 함수 호출 (DTO와 이미지 파일들 전달)

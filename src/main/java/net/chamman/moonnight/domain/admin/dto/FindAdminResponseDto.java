@@ -12,7 +12,7 @@ public record FindAdminResponseDto(
 		LocalDateTime createdAt
 		) {
 
-	public static FindAdminResponseDto fromEntity(AdminResponseDto adminResponseDto) {
+	public static FindAdminResponseDto from(AdminResponseDto adminResponseDto) {
 		return FindAdminResponseDto.builder()
 				.email(adminResponseDto.email())
 				.adminStatus(adminResponseDto.adminStatus())

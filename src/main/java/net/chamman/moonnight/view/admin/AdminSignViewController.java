@@ -16,8 +16,13 @@ import net.chamman.moonnight.global.annotation.ClientSpecific;
 public class AdminSignViewController {
 
 	@GetMapping("/admin/signIn")
-	public String showLogin(HttpServletRequest req, HttpServletResponse res, Model model) {
-
+	public String showLogin(@ClientSpecific(required = false, value = "X-Access-Token") String accessToken, HttpServletRequest req,
+			HttpServletResponse res, Model model) {
+		
+		log.debug("* accessToken: [{}]",accessToken);
+		if (accessToken != null) {
+			return "redirect:/admin/home";
+		}
 		return "admin/sign/signIn";
 	}
 
@@ -49,15 +54,15 @@ public class AdminSignViewController {
 	public String showAdminStatusDelete(HttpServletRequest req, HttpServletResponse res) {
 		return "admin/sign/signDelete";
 	}
-	
+
 	@GetMapping("/admin/find/email")
 	public String showAdminFindEmail(HttpServletRequest req, HttpServletResponse res) {
 		return "admin/find/email";
 	}
-	
+
 	@GetMapping("/admin/find/password")
 	public String showAdminFindPassword(HttpServletRequest req, HttpServletResponse res) {
 		return "admin/find/password";
 	}
-	
+
 }

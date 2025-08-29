@@ -4,7 +4,7 @@
 
 <head>
 	<title>프로필 정보</title>
-	<th:block th:replace="~{my/mypageSidebar :: sidebarStyles}"></th:block>
+	<th:block th:replace="~{admin/my/mypageSidebar :: sidebarStyles}"></th:block>
 	<style type="text/css">
 		.subContent {
 			margin-top: 30px;
@@ -201,25 +201,17 @@
 </head>
 <main layout:fragment="content">
 	<div class="container">
-		<div th:replace="~{my/mypageSidebar :: sidebarFragment}"></div>
+		<div th:replace="~{admin/my/mypageSidebar :: sidebarFragment}"></div>
 		<div class="content">
 			<h2 class="contentTitle">프로필 관리</h2>
 
-			<form id="profileForm" th:object="${user}" class="profile-form">
+			<form id="profileForm" th:object="${admin}" class="profile-form">
 
 				<div class="form-group">
 					<label for="nameInput">이름</label>
 					<div>
 						<input type="text" id="nameInput" name="name" th:value="*{name}" />
 						<span id="nameMessage" class="feedback-message"></span>
-					</div>
-				</div>
-
-				<div class="form-group">
-					<label for="birthInput">생년월일</label>
-					<div>
-						<input type="text" id="birthInput" name="birth" placeholder="YYYYMMDD 형식으로 입력" />
-						<span id="birthMessage" class="feedback-message"></span>
 					</div>
 				</div>
 
@@ -237,20 +229,6 @@
 					<span id="verificationMessage" class="feedback-message"></span>
 				</div>
 
-				<div class="form-group">
-					<label>마케팅 정보 수신 동의</label>
-					<div class="marketing-consent-group">
-						<div class="switch">
-							<input type="checkbox" id="marketingAgreeToggle" class="toggle-checkbox"
-								th:checked="*{marketingReceivedStatus}" />
-							<label for="marketingAgreeToggle" class="toggle-label">
-								<span class="toggle-button"></span>
-							</label>
-						</div>
-						<span style="font-size:14px;">마케팅 및 프로모션 알림(이메일, SMS) 수신에 동의합니다.</span>
-					</div>
-				</div>
-
 				<div class="actions">
 					<button type="button" id="saveProfileBtn" class="btn btn-primary">정보 저장</button>
 				</div>
@@ -260,32 +238,29 @@
 	</div>
 </main>
 <th:block layout:fragment="script">
-	<th:block th:replace="~{my/mypageSidebar :: sidebarScripts}"></th:block>
+	<th:block th:replace="~{admin/my/mypageSidebar :: sidebarScripts}"></th:block>
 
 	<script th:inline="javascript" type="module">
-		import {initPhoneFormatting, initVerificationCodeFormatting, initBirthFormatting, formatDate2} from '/js/format.js';
+		import {initPhoneFormatting, initVerificationCodeFormatting} from '/js/format.js';
 		import {sendSms, verifySmsCode} from '/js/smsVerification.js';
 		import {startCountdown, stopCountdown} from '/js/timer.js';
-		import {updateProfile, updatePhone} from '/js/user.js';
+		import {updateName, updatePhone} from '/js/admin/admin.js';
 
 		document.addEventListener('DOMContentLoaded', function () {
-			const user = /*[[${user}]]*/ {};
+			const admin = /*[[${admin}]]*/ {};
 
 			// DOM 요소들 가져오기
 			const profileForm = document.getElementById('profileForm');
 			const nameInput = document.getElementById('nameInput');
-			const birthInput = document.getElementById('birthInput');
 			const phoneInput = document.getElementById('phoneInput');
 			const changePhoneBtn = document.getElementById('changePhoneBtn');
 			const verificationSection = document.getElementById('verificationSection');
 			const smsVerificationCodeInput = document.getElementById('smsVerificationCode');
 			const verifyCodeBtn = document.getElementById('verifyCodeBtn');
-			const marketingAgreeToggle = document.getElementById('marketingAgreeToggle');
 			const saveProfileBtn = document.getElementById('saveProfileBtn');
 
 			// 피드백 메시지 요소
 			const nameMessage = document.getElementById('nameMessage');
-			const birthMessage = document.getElementById('birthMessage');
 			const phoneMessage = document.getElementById('phoneMessage');
 			const verificationMessage = document.getElementById('verificationMessage');
 
@@ -297,29 +272,13 @@
 				event.preventDefault();
 			});
 
-			// 생년월일 초기값 설정 및 blur 이벤트 핸들러
-			if (user.birth) {
-				birthInput.value = formatDate2(user.birth);
-			}
-			birthInput.addEventListener('blur', (e) => {
-				const inputValue = e.target.value.trim(); // 공백 제거
-				if (inputValue === '') { // 값이 비어있으면 메시지 지우고 종료
-					birthMessage.textContent = '';
-					return;
-				}
-				const formattedValue = formatDate2(inputValue);
-
-				birthInput.value = formattedValue;
-				birthMessage.textContent = ''; // 성공 시 메시지 지우기
-			});
 
 			initPhoneFormatting(phoneInput);
-			initBirthFormatting(birthInput);
 			initVerificationCodeFormatting(smsVerificationCodeInput);
 
 
 			// --- 2. 휴대폰 변경 및 인증 로직 ---
-			let currentPhoneNum = user.phone; // 현재 사용자의 휴대폰 번호 저장
+			let currentPhoneNum = admin.phone; // 현재 사용자의 휴대폰 번호 저장
 
 			changePhoneBtn.addEventListener('click', async function () {
 				if (changePhoneBtn.textContent === '휴대폰 변경') {
@@ -362,7 +321,7 @@
 
 				try {
 					await verifySmsCode(newPhoneNumber, verificationCode);
-					await updatePhone(newPhoneNumber);
+					await updatePhone(newPhoneNumber, `${admin.version}`);
 					alert('휴대폰 번호 변경 완료되었습니다.');
 
 					// 휴대폰 값 업데이트 및 UI 초기화
@@ -374,7 +333,10 @@
 					verificationSection.classList.add('hidden'); // 인증 섹션 숨김
 					smsVerificationCodeInput.value = ''; // 인증번호 입력창 초기화
 					phoneMessage.textContent = ''; // 메시지 초기화
-				} catch (error) {
+					verificationMessage.style.display='none';
+					verificationMessage.textContent = '';
+s				} catch (error) {
+					verificationMessage.style.display='block';
 					verificationMessage.textContent = error.message || '인증번호가 일치하지 않습니다. 다시 확인해주세요.';
 					verificationMessage.style.color = '#dc3545'; // 에러 메시지 색상
 				}
@@ -385,18 +347,9 @@
 			saveProfileBtn.addEventListener('click', async function () {
 				// 입력 값들 가져오기
 				const name = nameInput.value.trim();
-				const birth = birthInput.value.replace(/[^0-9]/g, '').trim(); // 숫자만 추출
-				const marketingConsent = marketingAgreeToggle.checked;
-
-				// 서버로 보낼 데이터 객체 구성
-				const profileData = {
-					name: name,
-					birth: birth,
-					marketingReceivedStatus: marketingConsent,
-				};
 
 				try {
-					await updateProfile(profileData);
+					await updateName(name, `${admin.version}`);
 					alert('정보 저장이 완료되었습니다.');
 					window.location.reload();
 				} catch (error) {

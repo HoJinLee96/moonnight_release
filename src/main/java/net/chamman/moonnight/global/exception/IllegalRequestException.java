@@ -3,6 +3,7 @@ package net.chamman.moonnight.global.exception;
 // request value가 입력값에 대해 문제가 있을때
 // HttpServletRequest가 null일때
 // 입력받은 값이 예상과 다를 때 (token내부의 email값과 입력받은 email값이 다른 경우)
+// 기존 견적서 이메일 휴대폰 둘다 인증을 해제하려고 할때.
 public class IllegalRequestException extends CustomException{
 
 	public IllegalRequestException(HttpStatusCode httpStatusCode, Exception e) {

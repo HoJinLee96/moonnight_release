@@ -1,13 +1,10 @@
 package net.chamman.moonnight.domain.question;
 
-import static net.chamman.moonnight.global.exception.HttpStatusCode.QUESTION_PASSWORD_MISMATCH;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERSION_MISMATCH;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -28,7 +25,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.chamman.moonnight.domain.answer.Answer;
-import net.chamman.moonnight.global.exception.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.VersionMismatchException;
 
 @Entity
@@ -130,12 +126,6 @@ public class Question {
 
 	public boolean isDelete() {
 		return questionStatus == QuestionStatus.DELETE;
-	}
-
-	public void verifyPassword(PasswordEncoder encoder, String rawPassword) {
-		if (!encoder.matches(rawPassword, this.password)) {
-			throw new MismatchPasswordException(QUESTION_PASSWORD_MISMATCH);
-		}
 	}
 
 	public void verifyVersion(int version) {

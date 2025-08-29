@@ -57,7 +57,6 @@ public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
 		if (authToken == null || authToken.isBlank()) {
 			CookieUtil.addCookie(res, "X-Auth-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4011, "유효하지 않은 요청 입니다.");
-			filterChain.doFilter(req, res);
 			return;
 		}
 
@@ -68,7 +67,6 @@ public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
 		if (value != null) {
 			CookieUtil.addCookie(res, "X-Auth-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
-			filterChain.doFilter(req, res);
 			return;
 		}
 
@@ -83,7 +81,6 @@ public class JwtAuthFilter extends AbstractAccessTokenFilter<AuthDetails> {
 		} catch (TimeOutJwtException e) {
 			CookieUtil.addCookie(res, "X-Auth-Token", "", Duration.ZERO);
 			setErrorResponse(res, 4012, "유효하지 않은 요청 입니다.");
-			filterChain.doFilter(req, res);
 			return;
 		}
 

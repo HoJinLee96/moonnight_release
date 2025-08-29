@@ -3,8 +3,6 @@ package net.chamman.moonnight.auth.adminSign.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import net.chamman.moonnight.domain.admin.Admin;
-import net.chamman.moonnight.domain.admin.Admin.AdminStatus;
 
 public record AdminSignUpRequestDto(
     
@@ -18,11 +16,4 @@ public record AdminSignUpRequestDto(
     String phone
 ) {
 
-  public Admin toEntity() {
-      return Admin.builder()
-          .name(name)
-          .phone(phone)
-          .adminStatus(AdminStatus.ACTIVE)
-          .build();
-  }
 }

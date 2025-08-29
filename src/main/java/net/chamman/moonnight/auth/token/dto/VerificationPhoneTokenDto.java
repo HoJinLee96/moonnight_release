@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import net.chamman.moonnight.auth.crypto.AesProvider;
 import net.chamman.moonnight.auth.crypto.Encryptable;
 import net.chamman.moonnight.auth.token.TokenProvider.TokenType;
@@ -16,6 +17,7 @@ import net.chamman.moonnight.global.exception.IllegalRequestException;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class VerificationPhoneTokenDto implements Encryptable<VerificationPhoneTokenDto>{
 	
 	String verificationId;
