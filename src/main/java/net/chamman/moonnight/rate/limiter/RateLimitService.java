@@ -29,7 +29,7 @@ public class RateLimitService {
     	rateLimiter.isAllowed(
             RateLimitKeyGenerator.ESTIMATE_REGISTER.key(clientIp),
             RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest(),
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest()
+            RateLimitKeyGenerator.ESTIMATE_REGISTER.getTimeoutMinutes()
         );
     }
     
@@ -37,9 +37,9 @@ public class RateLimitService {
     	log.debug("* 질문 등록 요청 횟수 체크 clientIp: [{}]",LogMaskingUtil.maskIp(clientIp, MaskLevel.MEDIUM));
 
     	rateLimiter.isAllowed(
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.key(clientIp),
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest(),
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest()
+            RateLimitKeyGenerator.QUESTION_REGISTER.key(clientIp),
+            RateLimitKeyGenerator.QUESTION_REGISTER.getMaxRequest(),
+            RateLimitKeyGenerator.QUESTION_REGISTER.getTimeoutMinutes()
         );
     }
     
@@ -47,9 +47,9 @@ public class RateLimitService {
     	log.debug("* 요청 횟수 체크 clientIp: [{}]",LogMaskingUtil.maskIp(clientIp, MaskLevel.MEDIUM));
 
     	rateLimiter.isAllowed(
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.key(clientIp),
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest(),
-            RateLimitKeyGenerator.ESTIMATE_REGISTER.getMaxRequest()
+            RateLimitKeyGenerator.REQUEST_CLIENT_IP.key(clientIp),
+            RateLimitKeyGenerator.REQUEST_CLIENT_IP.getMaxRequest(),
+            RateLimitKeyGenerator.REQUEST_CLIENT_IP.getTimeoutMinutes()
         );
     }
 }

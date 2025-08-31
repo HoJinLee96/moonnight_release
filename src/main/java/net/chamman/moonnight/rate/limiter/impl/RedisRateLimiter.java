@@ -33,7 +33,7 @@ public class RedisRateLimiter implements RateLimiter {
 
 		if (reqCount > maxCount) {
 			String clientIp = CustomRequestContextHolder.getClientIp();
-			log.debug("* TooManyRequestsException발생. clientIp: [{}]", clientIp);
+			log.info("* TooManyRequestsException발생. clientIp: [{}]", clientIp);
 			throw new TooManyRequestsException(TOO_MANY_REQUEST, "요청 횟수 초과.");
 		}
 
