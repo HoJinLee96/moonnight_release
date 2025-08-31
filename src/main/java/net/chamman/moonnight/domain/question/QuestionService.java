@@ -23,6 +23,7 @@ import net.chamman.moonnight.domain.question.dto.QuestionPasswordRequestDto;
 import net.chamman.moonnight.global.exception.MismatchPasswordException;
 import net.chamman.moonnight.global.exception.NoSuchDataException;
 import net.chamman.moonnight.global.exception.status.StatusDeleteException;
+import net.chamman.moonnight.rate.limiter.RateLimitService;
 
 @Service
 @RequiredArgsConstructor
@@ -30,25 +31,28 @@ import net.chamman.moonnight.global.exception.status.StatusDeleteException;
 public class QuestionService {
 
 	private final QuestionRepository questionRepository;
+	private final RateLimitService rateLimitService;
 	private final Obfuscator obfuscator;
 	private final PasswordEncoder passwordEncoder;
 
 	@Transactional
 	public Question registerQuestion(QuestionCreateRequestDto dto, String clientIp) {
+		
+		rateLimitService.checkQuestionRegister(clientIp);
+		rateLimitService.checkRequestClientIp(clientIp);
+		
 		Question question = Question.builder().password(passwordEncoder.encode(dto.password())).title(dto.title())
 				.content(dto.content()).questionStatus(QuestionStatus.PENDING).clientIp(clientIp).build();
 		questionRepository.save(question);
 		return question;
 	}
 
-	@Transactional(readOnly = true)
 	public List<Question> getQuestionsByPage(Pageable pageable) {
 		Page<Question> questionPage = questionRepository.findAllByQuestionStatusNot(QuestionStatus.DELETE, pageable);
 
 		return questionPage.getContent();
 	}
 
-	@Transactional(readOnly = true)
 	public List<Question> getQuestionsByTitle(String title, Pageable pageable) {
 		Page<Question> questionPage = questionRepository.findByTitleContainingAndQuestionStatusNot(title,
 				QuestionStatus.DELETE, pageable);
@@ -56,7 +60,6 @@ public class QuestionService {
 		return questionPage.getContent();
 	}
 
-	@Transactional(readOnly = true)
 	public Question verifyPasswordForModification(int questionId, QuestionPasswordRequestDto dto) {
 		Question question = findQuestionById(questionId);
 

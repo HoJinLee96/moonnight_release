@@ -21,12 +21,11 @@ public class RedisRateLimiter implements RateLimiter {
 
 	private final RedisTemplate<String, String> redisTemplate;
 
-	private final long timeoutMinutes = 30;
-
 	@Override
-	public boolean isAllowed(String key, int maxCount) {
+	public boolean isAllowed(String key, int maxCount, int timeoutMinutes) {
 		ValueOperations<String, String> ops = redisTemplate.opsForValue();
 		Long reqCount = ops.increment(key, 1);
+		log.debug("* Limit 조회. key: [{}], reqCount: [{}], maxCount: [{}], timeoutMinutes: [{}]", key, reqCount, maxCount, timeoutMinutes);
 
 		if (reqCount == 1) {
 			redisTemplate.expire(key, timeoutMinutes, TimeUnit.MINUTES);
@@ -34,7 +33,7 @@ public class RedisRateLimiter implements RateLimiter {
 
 		if (reqCount > maxCount) {
 			String clientIp = CustomRequestContextHolder.getClientIp();
-			log.warn("* TooManyRequestsException발생. clientIp: [{}]",clientIp);
+			log.debug("* TooManyRequestsException발생. clientIp: [{}]", clientIp);
 			throw new TooManyRequestsException(TOO_MANY_REQUEST, "요청 횟수 초과.");
 		}
 
