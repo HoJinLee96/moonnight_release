@@ -66,7 +66,8 @@ public class EstimateService {
 	@Transactional
 	public Estimate registerEstimate(EstimateRegisterRequestDto dto, List<MultipartFile> images, String clientIp) {
 
-		rateLimitService.checkEstimateByIp(clientIp);
+		rateLimitService.checkEstimateRegister(clientIp);
+		rateLimitService.checkRequestClientIp(clientIp);
 
 		List<String> imagesPath = null;
 
@@ -113,7 +114,8 @@ public class EstimateService {
 	@Transactional
 	public Estimate registerSimpleEstimate(SimpleEstimateRequestDto dto, String clientIp) {
 
-		rateLimitService.checkEstimateByIp(clientIp);
+		rateLimitService.checkEstimateRegister(clientIp);
+		rateLimitService.checkRequestClientIp(clientIp);
 
 		Estimate estimate = Estimate.builder().name("간편 견적 " + dto.phone()).phone(dto.phone())
 				.cleaningService(dto.cleaningService().name()).mainAddress(dto.region())

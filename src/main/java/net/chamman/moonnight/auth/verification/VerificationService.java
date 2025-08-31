@@ -1,12 +1,12 @@
 package net.chamman.moonnight.auth.verification;
 
+import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_SEND_FAIL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.MISMATCH_RECIPIENT;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.MISMATCH_VERIFICATION_CODE;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.NOT_VERIFY;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.SMS_SEND_FAIL;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_EXPIRED;
 import static net.chamman.moonnight.global.exception.HttpStatusCode.VERIFICATION_NOT_FOUND;
-import static net.chamman.moonnight.global.exception.HttpStatusCode.EMAIL_SEND_FAIL;
 
 import java.util.Random;
 
@@ -62,7 +62,8 @@ public class VerificationService {
 		log.debug("* 인증번호 문자 발송. RecipientPhone: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskPhone(recipientPhone, MaskLevel.MEDIUM), clientIp);
 
-		rateLimitService.checkPhoneVerify(recipientPhone);
+		rateLimitService.checkVerificationCodeRequest(recipientPhone);
+		rateLimitService.checkRequestClientIp(clientIp);
 
 		String verificationCode = generateVerificationCode();
 		String message = "[달밤청소 휴대폰 인증 요청]\n인증번호 [" + verificationCode + "]를 입력해주세요.";
@@ -107,7 +108,8 @@ public class VerificationService {
 		log.debug("* 인증번호 이메일 발송. RecipientEmail: [{}], ClientIp: [{}]",
 				LogMaskingUtil.maskEmail(recipientEmail, MaskLevel.MEDIUM), clientIp);
 
-		rateLimitService.checkEmailVerify(recipientEmail);
+		rateLimitService.checkVerificationCodeRequest(recipientEmail);
+		rateLimitService.checkRequestClientIp(clientIp);
 
 		String verificationCode = generateVerificationCode();
 		String message = "인증번호 [" + verificationCode + "]를 입력해주세요.";

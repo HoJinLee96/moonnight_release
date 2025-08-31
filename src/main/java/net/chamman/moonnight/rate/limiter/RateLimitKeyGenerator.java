@@ -1,17 +1,20 @@
 package net.chamman.moonnight.rate.limiter;
 
 public enum RateLimitKeyGenerator {
-	VERIFY_PHONE("rate_limit:verify:phone:", 20),
-	VERIFY_EMAIL("rate_limit:verify:email:", 20),
-	ESTIMATE("rate_limit:estimate:", 5),
-	IP("rate_limit:ip:", 40);
+	
+	VERIFICATION_CODE_REQUEST("rate_limit:verification_code_request:", 10, 30),
+	ESTIMATE_REGISTER("rate_limit:estimate_register:", 5, 30),
+	QUESTION_REGISTER("rate_limit:question_register:", 5, 30),
+	REQUEST_CLIENT_IP("rate_limit:request_client_ip:", 30, 30);
 
 	private final String prefix;
 	private final int maxRequest;
+	private final int timeoutMinutes;
 
-	RateLimitKeyGenerator(String prefix, int maxRequest) {
+	RateLimitKeyGenerator(String prefix, int maxRequest, int timeoutMinutes) {
 		this.prefix = prefix;
 		this.maxRequest = maxRequest;
+		this.timeoutMinutes = timeoutMinutes;
 	}
 
 	public String key(String id) {
@@ -20,5 +23,9 @@ public enum RateLimitKeyGenerator {
 
 	public int getMaxRequest() {
 		return maxRequest;
+	}
+
+	public int getTimeoutMinutes() {
+		return timeoutMinutes;
 	}
 }
